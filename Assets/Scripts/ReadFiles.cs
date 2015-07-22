@@ -154,7 +154,7 @@ namespace LoadData{
 			}
 			
 			sr.Close ();
-
+		
 			Debug.Log ("atoms:" + mol.Atoms.Count);
 			return mol;
 			
@@ -164,15 +164,14 @@ namespace LoadData{
 		public static Molecule ReadGRO(TextReader sr){
 			lastresID =-1;
 			lastchainID = "NONE";
-			nowline = 0;
 			nowresidue = -1;
-			nowchain = -1;
+			nowchain = 0;
 			
 			nbatom=0;
 
 			Molecule mol = new Molecule ();
 			Residue r =new Residue();
-			chainID = "N";
+			chainID = "None";
 			mol.Chains.Add(new Chain("ATOM",chainID));
 			mol.Chains.Add(new Chain("HETATM",chainID));
 			//We skip the first two lines
@@ -190,14 +189,15 @@ namespace LoadData{
 					if((lastresID != resID)){
 						resname = s.Substring(5,5).Trim();
 
-						if(String.Compare(resname,"SOL") !=0 && String.Compare(resname,"DLC") !=0 ){
+						if(resname != "SOL" &&resname != "DLC"){
 							r =new Residue(resname,resID,mol.Chains[0]);
+							/*everything after dlc is a hetatm
 							if(nowchain != 0){
 								nowresidue = -1;
 							}
 							nowchain =0;
-
-							mol.Chains[0].Residues.Add(r);
+							*/
+							mol.Chains[nowchain].Residues.Add(r);
 							mol.Residues.Add(r);
 
 						}
@@ -207,7 +207,7 @@ namespace LoadData{
 								nowresidue = -1;
 							}
 							nowchain =1;
-							mol.Chains[1].Residues.Add(r);
+							mol.Chains[nowchain].Residues.Add(r);
 							mol.Residues.Add(r);
 						}
 
@@ -232,16 +232,16 @@ namespace LoadData{
 					z*=10;
 					vect = new Vector3(x,y,z);
 
-					if(String.Compare(resname,"SOL") !=0 && String.Compare(resname,"DLC") !=0){
+					if(resname != "SOL" &&resname != "DLC" ){
 						Atom at =new Atom(vect,atomname,0.0f,nbatom,r,mol.Chains[0]); 
-						mol.Chains[0].Residues[nowresidue].Atoms.Add(at);
-						mol.Chains[0].Atoms.Add(at);
+						mol.Chains[nowchain].Residues[nowresidue].Atoms.Add(at);
+						mol.Chains[nowchain].Atoms.Add(at);
 						mol.Atoms.Add(at);
 					}
 					else{
 						Atom at =new Atom(vect,atomname,0.0f,nbatom,r,mol.Chains[1]); 
-						mol.Chains[1].Residues[nowresidue].Atoms.Add(at);
-						mol.Chains[1].Atoms.Add(at);
+						mol.Chains[nowchain].Residues[nowresidue].Atoms.Add(at);
+						mol.Chains[nowchain].Atoms.Add(at);
 						mol.Atoms.Add(at);
 					}
 						
@@ -262,7 +262,6 @@ namespace LoadData{
 
 
 			sr.Close ();
-	
 			Debug.Log ("atoms:" + mol.Atoms.Count);
 			return mol;
 

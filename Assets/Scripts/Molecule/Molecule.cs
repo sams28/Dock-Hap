@@ -41,20 +41,20 @@ namespace MoleculeData{
 		protected bool[] selected;
 
 		protected Mol_Object(){
-			//we should have a define max_device_allowed
+
 			active =false;
-			selected =new bool[10];
-			for (int i =0; i<10; i++)
+			selected =new bool[Main.MAX_NUM_DEVICES];
+			for (int i =0; i<Main.MAX_NUM_DEVICES; i++)
 				selected [i] = false;
-			forceGameobject = new GameObject[10];
+			forceGameobject = new GameObject[Main.MAX_NUM_DEVICES];
 		}
 
 		protected Mol_Object(Mol_Object m){
 			location = m.location;
 			gameobject = m.gameobject;
-			selected =new bool[10];
+			selected =new bool[Main.MAX_NUM_DEVICES];
 			m.selected.CopyTo(selected,0);
-			forceGameobject = new GameObject[10];
+			forceGameobject = new GameObject[Main.MAX_NUM_DEVICES];
 			m.forceGameobject.CopyTo(forceGameobject,0);
 			objColor = m.objColor;
 			objMaterial = m.objMaterial;

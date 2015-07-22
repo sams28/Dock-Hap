@@ -6,6 +6,9 @@ using System.IO;
 using MoleculeData;
 using LoadData;
 
+
+
+
 public class Main : MonoBehaviour {
 
 
@@ -17,7 +20,7 @@ public class Main : MonoBehaviour {
 	public string resource_name;
 	public List<Molecule> molecules;
 	public Material mainMaterial;
-
+	public const int MAX_NUM_DEVICES =10;
 
 	#if UNITY_EDITOR
 	void Awake () {
