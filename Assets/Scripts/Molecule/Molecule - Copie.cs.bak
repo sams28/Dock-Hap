@@ -1,0 +1,648 @@
+﻿using UnityEngine;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Net;
+using System.Linq;
+using System.Text;	
+using System.Text.RegularExpressions;
+
+namespace MoleculeData{
+
+
+
+
+
+
+
+
+	public class Atom
+	{
+		public Vector3 atomLocation;
+		public string atomName;
+		public string substruct;
+		public float atomCharge;
+		public GameObject atom;
+		public Vector3 force;
+		
+		public Atom(Vector3 location,string name){
+			
+			
+			atomLocation = location;
+			atomName = name;
+			force = new Vector3 (0, 0, 0);
+			
+			
+		}
+		public Atom(Vector3 location,string name,float charge){
+			
+			
+			atomLocation = location;
+			atomName = name;
+			atomCharge = charge;
+			force = new Vector3 (0, 0, 0);
+			
+		}
+		
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+public class Molecule {
+
+	public enum ColorMolecule{
+		Natural,
+		Charges
+		
+	}
+
+
+	public struct IMDEnergies
+	{
+		public int tstep;  //!< integer timestep index
+		public float T;          //!< Temperature in degrees Kelvin
+		public float Etot;       //!< Total energy, in Kcal/mol
+		public float Epot;       //!< Potential energy, in Kcal/mol
+		public float Evdw;       //!< Van der Waals energy, in Kcal/mol
+		public float Eelec;      //!< Electrostatic energy, in Kcal/mol
+		public float Ebond;      //!< Bond energy, Kcal/mol
+		public float Eangle;     //!< Angle energy, Kcal/mol
+		public float Edihe;      //!< Dihedral energy, Kcal/mol
+		public float Eimpr;
+	};
+
+
+
+
+
+
+	public GameObject atom_prefab;
+	public ColorMolecule colorMolecule;
+	public float scale;
+
+	public float resolution_surface;
+	public IMDEnergies energies;
+
+	private Vector3 target;
+	[NonSerialized] //Shouldn't be public
+	public List<Atom> atoms; 
+	private List<int> splits;
+	private Vector3 MinValue; 
+	private Vector3 MaxValue; 
+
+	private PerlinNoise m_perlin;
+	private GameObject[] m_mesh;
+
+
+	public void Start(){
+
+		target =new Vector3(0f,0f,0f);
+		atoms = new List<Atom> ();
+		splits = new List<int> ();
+		MinValue =new Vector3 (0, 0, 0);
+		MaxValue = new Vector3 (0, 0, 0);
+
+		CreateMolecule (sr);
+
+	}
+
+	public void Update(){
+		if(Input.GetKey(KeyCode.U)){
+		
+
+			CombineMesh();
+
+		}
+
+	}
+
+
+	public void CreateMolecule(TextReader sr) {
+		if (resource_name.EndsWith ("mol2")) {
+			ReadMOL2 (sr);
+		} else if (resource_name.EndsWith ("pdb")) {
+			ReadPDB (sr);
+		}
+		
+		
+		//ReadPDB(sr);
+		
+		BuildMoleculeComponents();
+		//CreateSplines();
+		//CreateResidues();
+		//CombineMesh();
+		DisplayAtoms();
+
+		
+	}
+
+
+
+
+
+
+
+	private float CapResolution(float resolution) {
+		int nbAtoms = atoms.Count;
+		//float resolution = DEFAULT_RESOLUTION;
+		
+		if(nbAtoms > 500)
+			resolution = 2.5f;
+		if(nbAtoms > 1000)
+			resolution = 2.2f;
+		if(nbAtoms > 2000)
+			resolution = 2.0f;
+		if(nbAtoms > 4000)
+			resolution = 1.8f;
+		if(nbAtoms > 5000)
+			resolution = 1.7f;
+		if(nbAtoms > 6000)
+			resolution = 1.6f;
+		if(nbAtoms > 8000)
+			resolution = 1.5f;
+		if(nbAtoms > 10000)
+			resolution = 1.4f;
+		if(nbAtoms > 14000)
+			resolution = 1.2f;
+		if(nbAtoms > 20000)
+			resolution = 1.0f;
+		
+		return resolution;
+	}
+
+
+
+
+
+
+	public void CombineMesh() {
+
+		m_perlin = new PerlinNoise(2);
+		//Target is the value that represents the surface of mesh
+		//For example the perlin noise has a range of -1 to 1 so the mid point is were we want the surface to cut through
+		//The target value does not have to be the mid point it can be any value with in the range
+		MarchingCubes.SetTarget(resolution_surface);
+		
+		//Winding order of triangles use 2,1,0 or 0,1,2
+		//MarchingCubes.SetWindingOrder(2, 1, 0);
+		
+		//Set the mode used to create the mesh
+		//Cubes is faster and creates less verts, tetrahedrons is slower and creates more verts but better represents the mesh surface
+		//MarchingCubes.SetModeToCubes();
+		MarchingCubes.SetModeToCubes();
+
+
+
+		float resolution =2.75f;
+		resolution = CapResolution (resolution);
+
+		//The size of voxel array. Be carefull not to make it to large as a mesh in unity can only be made up of 65000 verts
+		int X = (int)(((MaxValue.x - MinValue.x) * resolution) + 40);
+		int Y = (int)(((MaxValue.y - MinValue.y) * resolution) + 40);
+		int Z = (int)(((MaxValue.z - MinValue.z) * resolution) + 40);
+		Debug.Log("Density minValue :: " + resolution);
+		Debug.Log("Density point X,Y,Z :: "+ X+","+Y+","+Z);
+		Debug.Log("Density minValue :: " + MinValue);
+
+
+		float[,,] gridS = new float[X,Y,Z];
+		Color[,,] VertColor = new Color[X, Y, Z];
+		List<Mesh> mesh = new List<Mesh>();
+
+
+		Vector3 delta = new Vector3 (resolution, resolution, resolution);
+		
+		// We need to refresh the molecule's origin when it's not
+		// the first molecule for which we generate a surface.
+		Vector3 origin = MinValue;
+		Debug.Log ("Entering :: Generation of density from PDB");
+		
+		
+		
+		
+		
+		//Debug.Log ("Density point X,Y,Z :: " + X + "," + Y + "," + Z);
+		//Debug.Log ("Density minValue :: " + MinValue);
+		
+		
+		
+		int i;
+		int j;
+		int k;
+		float Dist;
+		float bfactor;
+		int atomnumber = 0;
+		Color atomColor;
+		string type;
+		float density;
+		Vector3 fudgeFactor = new Vector3(18f,18f,18f);
+		
+		/*
+		for (i=0; i<gridS.GetLength(0); i++)
+			for (j=0; j<gridS.GetLength(1); j++)
+				for (k=0; k<gridS.GetLength(2); k++)
+					VertColor [i, j, k].b = 1f;
+		
+		*/
+		int index;
+		for(index =0; index<atoms.Count;index++) {
+			
+			i = Mathf.RoundToInt ((atoms[index].atomLocation.x - MinValue.x) * delta.x + fudgeFactor.x);
+			j = Mathf.RoundToInt ((atoms[index].atomLocation.y - MinValue.y) * delta.y + fudgeFactor.y);
+			k = Mathf.RoundToInt ((atoms[index].atomLocation.z - MinValue.z) * delta.z + fudgeFactor.z);
+			Vector3 v1 = new Vector3 ((atoms[index].atomLocation.x - MinValue.x) * delta.x + fudgeFactor.x,
+			                          (atoms[index].atomLocation.y - MinValue.y) * delta.y + fudgeFactor.y,
+			                          (atoms[index].atomLocation.z - MinValue.z) * delta.z + fudgeFactor.z);
+			
+			
+			
+			float AtomRadius = 2f;
+			
+			// Possibilité de créer une liste a la lecture du pdb et de la reprendre ici.
+			// Comme cela on peut lire d'autre propriétés biologiques
+
+			switch(colorMolecule){
+			case ColorMolecule.Natural :
+				switch (atoms[i].atomName) {
+
+				case "C": 
+					AtomRadius = 3.4f;
+					atomColor = atoms[i].atom.GetComponent<MeshRenderer>().material.color;
+					break;
+				case "N": 
+					AtomRadius = 3.1f;
+					atomColor = atoms[i].atom.GetComponent<MeshRenderer>().material.color;
+					break;	
+				case "O": 
+					AtomRadius = 3.04f;
+					atomColor = atoms[i].atom.GetComponent<MeshRenderer>().material.color;
+					break;
+				case "S": 
+					AtomRadius = 4.54f;
+					atomColor = atoms[i].atom.GetComponent<MeshRenderer>().material.color;
+					break;
+				case "P": 
+					AtomRadius = 3.6f;
+					atomColor = atoms[i].atom.GetComponent<MeshRenderer>().material.color;
+					break;
+				case "H": 
+					AtomRadius = 2.4f;
+					atomColor = atoms[i].atom.GetComponent<MeshRenderer>().material.color;
+					break;
+				default: 
+					AtomRadius = 2f;
+					atomColor = atoms[i].atom.GetComponent<MeshRenderer>().material.color;
+					break;
+				}
+				break;
+			case ColorMolecule.Charges : 
+				AtomRadius = 2f;
+
+
+				atomColor = atoms[i].atom.GetComponent<MeshRenderer>().material.color;
+				break;
+			default: atomColor = new Color(0,1,1,1);break;
+			}
+			for (int l = i-8; l < i+9; l++)
+				for (int m = j-8; m < j+9; m++)
+				for (int n = k-8; n < k+9; n++) {
+					Vector3 v2 = new Vector3 (l, m, n);
+					Dist = Vector3.Distance (v1, v2);
+					density = (float)Math.Exp (-((Dist / AtomRadius) * (Dist / AtomRadius)));
+					if (density > gridS [l, m, n])
+						VertColor [l, m, n] = atomColor;
+					gridS [l, m, n] += density;
+				}
+			
+			
+		}
+
+
+
+
+
+
+
+
+
+
+
+		 mesh = MarchingCubes.CreateMesh(gridS,VertColor);
+
+		//Debug.Log("Entire surface contains " + mesh.vertices.Length.ToString() + " vertices.");
+		//The diffuse shader wants uvs so just fill with a empty array, there not actually used
+		//mesh.uv = new Vector2[mesh.vertices.Length];
+		//mesh.RecalculateNormals();
+		
+		//m_mesh = new GameObject("Mesh");
+
+		//m_mesh.GetComponent<MeshRenderer>().material = m_material;
+		m_mesh = new GameObject[mesh.Count];
+		for (int s =0; s<m_mesh.Length; s++) {
+			m_mesh[s] = new GameObject();
+			m_mesh[s].transform.SetParent(this.transform);
+			m_mesh[s].AddComponent<MeshFilter>();
+			m_mesh[s].AddComponent<MeshRenderer>();
+			m_mesh[s].GetComponent<MeshFilter>().mesh = mesh[s];
+			m_mesh[s].GetComponent<MeshRenderer>().material= Resources.Load("Materials/vert") as Material;
+
+		}
+		//Center mesh
+
+
+
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+	public void ReadMOL2(TextReader sr){
+		
+		int nowline=0;
+		int nbAtoms = 0;
+		Vector3 vect;
+		string s;
+		bool t = false;
+		string[] sl;
+		
+		while((s=sr.ReadLine())!=null) {
+
+			if(s.StartsWith("@<TRIPOS>BOND")) {
+				t=false;
+				
+			}
+				
+
+			if(t==true){
+				sl = s.Split(new Char[] {' '},StringSplitOptions.RemoveEmptyEntries);
+
+
+
+				string typestring=sl[1];
+				
+				
+			
+				//we have to reverse the Z coordinates
+				float x=float.Parse(sl[2]);
+				float y=float.Parse(sl[3]);
+				float z=-float.Parse(sl[4]);
+
+				vect = new Vector3(x,y,z);
+
+				float ch = float.Parse(sl[8]);
+
+				Atom ab= new Atom(vect,typestring,ch);
+				atoms.Add(ab);
+				
+				nbAtoms ++;
+					
+
+					
+				}
+			if(s.StartsWith("@<TRIPOS>ATOM")) {
+				t=true;
+				
+			}
+				
+				
+				nowline++;
+
+		}
+		
+		sr.Close ();
+		Debug.Log ("atoms:" + atoms.Count);
+
+
+
+	}
+
+
+	public void ReadPDB(TextReader sr){
+		
+		int nowline=0;
+		int nbAtoms = 0;
+		Vector3 vect;
+		string s;
+
+		
+		while((s=sr.ReadLine())!=null) {
+			if(s.StartsWith("ENDMDL"))
+				break;
+			
+			if(s.Length>4) {
+
+				if(s.StartsWith("ATOM")) {
+
+					string sx=s.Substring(30,8);
+					string sy=s.Substring(38,8);
+					string sz=s.Substring(46,8);
+
+					string typestring=s.Substring(12,4).Trim();
+
+
+					
+					//Unity has a left-handed coordinates system while PDBs are right-handed
+					//So we have to reverse the X coordinates
+					float x=-float.Parse(sx);
+					float y=float.Parse(sy);
+					float z=float.Parse(sz);
+					vect = new Vector3(x,y,z);
+
+
+
+
+					Atom ab= new Atom(vect,typestring);
+					atoms.Add(ab);
+
+					nbAtoms ++;
+
+					
+					
+				}
+
+
+				
+
+				
+				nowline++;
+			}
+		}
+
+		sr.Close ();
+		Debug.Log ("atoms:" + atoms.Count);
+
+
+	}
+
+
+
+
+	/// <summary>
+	/// Builds the molecule's components.
+	/// This is called after reading a PDB. It fills everything that always needs to be filled in MoleculeModel.
+	/// </summary>
+	public void BuildMoleculeComponents() {
+		List<Atom>	 a			=	atoms;
+		
+		Vector3 minPoint= new Vector3(float.MaxValue,float.MaxValue,float.MaxValue);
+		Vector3 maxPoint= new Vector3(float.MinValue,float.MinValue,float.MinValue);
+		Vector3 bary = Vector3.zero;
+		
+		for(int i=0; i<a.Count; i++) {
+			Vector3 position= a[i].atomLocation;
+			minPoint = Vector3.Min(minPoint, new Vector3(position[0],position[1],position[2]));
+			maxPoint = Vector3.Max(maxPoint, new Vector3(position[0],position[1],position[2]));
+			bary = bary+(new Vector3(position[0],position[1],position[2]));
+		}
+		Vector3 centerPoint = bary/a.Count;
+		target = Vector3.zero;
+		Debug.Log("centerPoint:"+centerPoint + " min/max " + minPoint + "/" + maxPoint);
+		transform.localPosition -= centerPoint;
+
+		Camera.main.transform.localPosition = new Vector3 (0, 0, target.z - (Vector3.Distance (maxPoint, minPoint)));
+		MinValue = minPoint;
+		MaxValue = maxPoint;
+	} // End of BuildMoleculeComponents
+
+
+	public Vector2 GradientCharges(List<Atom> a){
+		float min=0.0f;
+		float max=0.0f;
+
+		for (int i =0; i < a.Count; i++) {
+
+			if (a [i].atomCharge > max) {
+				max = a [i].atomCharge;
+			}
+			if (a [i].atomCharge < min) {
+				min = a [i].atomCharge;
+			}
+
+
+		}
+		Debug.Log (min + " " + max);
+		return (new Vector2 (min, max));
+
+	}
+
+
+
+
+	public void DisplayAtoms() 
+	{
+		Vector3 scal = new Vector3 (scale, scale, scale);
+		Vector3 norm;
+		float d = -0.1f;
+		string type;
+		List<Material> m = new List<Material>();
+		Vector3[] vertices;
+		List<int> indices;
+
+		for (int i =0; i < atoms.Count; i++) {
+
+			type = atoms[i].atomName [0].ToString ();
+			m.Add(new Material(Resources.Load("Low shader") as Shader));
+		
+
+			atoms[i].atom = (GameObject)Instantiate (atom_prefab, new Vector3 (atoms[i].atomLocation [0], atoms[i].atomLocation [1], atoms[i].atomLocation [2]), Quaternion.identity);
+
+			atoms[i].atom.transform.localScale = scal;
+			atoms[i].atom.transform.SetParent(transform,false);
+
+
+			/*
+			vertices = atoms[i].atom.GetComponent<MeshFilter>().mesh.vertices;
+			indices = new List<int>(atoms[i].atom.GetComponent<MeshFilter>().mesh.triangles);
+			int count = indices.Count / 3;
+			norm = atoms[i].atom.transform.position.normalized;
+
+			for (int j = count-1; j >= 0; j--)
+			{
+				Vector3 V1 = vertices[indices[j*3 + 0]];
+				Vector3 V2 = vertices[indices[j*3 + 1]];
+				Vector3 V3 = vertices[indices[j*3 + 2]];
+				float t1 = V1.x*norm.x+V1.y*norm.y+V1.z*norm.z;
+				float t2 = V2.x*norm.x+V2.y*norm.y+V2.z*norm.z;
+				float t3 = V3.x*norm.x+V3.y*norm.y+V3.z*norm.z;
+				if(norm != Vector3.zero){
+					if (t1 < d && t2 < d && t3 < d)
+						indices.RemoveRange(j*3, 3);
+					
+				}
+			}
+
+			atoms[i].atom.GetComponent<MeshFilter>().mesh.triangles = indices.ToArray();
+*/
+
+			switch(colorMolecule){
+			case ColorMolecule.Natural :
+
+			
+				switch (type) {
+				case "O":
+					atoms[i].atom.GetComponent<Renderer>().material = Resources.Load("Material/O Mat") as Material;
+					break;
+				case "N":
+					atoms[i].atom.GetComponent<Renderer>().material = Resources.Load("Material/N Mat") as Material;
+					break;
+				case "H":
+					atoms[i].atom.GetComponent<Renderer>().material = Resources.Load("Material/H Mat") as Material;
+					break;
+				case "C":
+					atoms[i].atom.GetComponent<Renderer>().material = Resources.Load("Material/C Mat") as Material;
+					break;
+				case "P":
+					atoms[i].atom.GetComponent<Renderer>().material = Resources.Load("Material/P Mat") as Material;
+					break;
+				case "S":
+					atoms[i].atom.GetComponent<Renderer>().material = Resources.Load("Material/S Mat") as Material;
+					break;
+				default:
+					atoms[i].atom.GetComponent<Renderer>().material = Resources.Load("Material/Other Mat") as Material;
+					break;
+				}
+				break;
+			case ColorMolecule.Charges : 
+				atoms[i].atom.GetComponent<Renderer>().material = Resources.Load("Material/Test") as Material;
+				if(atoms[i].atomCharge >= 0){
+					atoms[i].atom.GetComponent<Renderer>().material.SetColor("_Color",new Color((atoms[i].atomCharge)/GradientCharges(atoms).y,0f,1f,1f));
+				}
+				else{
+					atoms[i].atom.GetComponent<Renderer>().material.SetColor("_Color",new Color((atoms[i].atomCharge)/-GradientCharges(atoms).x,0f,1f,1f));
+				}
+				break;
+			default: break;
+
+			}
+
+
+
+			atoms[i].atom.SetActive(true);
+		
+		}
+
+	}
+	
+	
+}
+}
