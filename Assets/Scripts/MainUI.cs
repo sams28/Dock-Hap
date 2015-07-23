@@ -61,7 +61,7 @@ public class MainUI : MonoBehaviour {
 
 
 	private Camera canvasCamera;
-	private bool openMenu,showFPS, typeMenu,colorMenu,showWater,showHet;
+	private bool openMenu,showFPS, typeMenu,colorMenu;
 	private List<SubMenu> subMenus;
 	private ColorDisplay color;
 	private TypeDisplay type;
@@ -82,8 +82,6 @@ public class MainUI : MonoBehaviour {
 
 		showFPS = true;
 		openMenu=false;
-		showWater = true;
-		showHet = true;
 
 		labels_mol = new List<GameObject> ();
 
@@ -116,7 +114,7 @@ public class MainUI : MonoBehaviour {
 
 		menu.SetActive (false);
 		//start.transform.FindChild ("LoadFile").GetComponent<InputField> ().text = Application.dataPath+"/Resources/dyna1.gro";
-		start.transform.FindChild ("LoadFile").GetComponent<InputField> ().text = "/Users/Samba/Documents/molecules/dyna1.gro";
+		start.transform.FindChild ("LoadFile").GetComponent<InputField> ().text = "/Users/Samba/Documents/molecules/imd_ini.pdb";
 		//start.transform.FindChild ("LoadFile").GetComponent<InputField> ().text = Application.dataPath+"/Resources/1BRS.pdb";
 	
 	}
@@ -192,18 +190,19 @@ public class MainUI : MonoBehaviour {
 
 		menu.transform.FindChild ("Atoms").FindChild ("InputField").GetComponent<InputField> ().text = labels_mol [current_mol - 1].transform.FindChild ("Label").GetComponent<Text> ().text;
 
+	}
 
-
-
+	public void ApplyFrames (InputField passField){
+	
+		GetComponent<Main> ().SetFrames (passField.text);
 
 	}
 
-	public void ApplyMol (InputField passField){
 
+
+	public void ApplyMol (InputField passField){
 		if (GetComponent<Main> ().SetMolecule (passField.text,false,current_mol)) {
 			labels_mol[current_mol-1].transform.FindChild ("Label").GetComponent<Text> ().text =passField.text;
-
-
 			GetComponent<Main> ().DisplayMolecules (current_mol);
 		}
 
@@ -213,7 +212,10 @@ public class MainUI : MonoBehaviour {
 		if (current_mol > 1) {
 			Destroy(labels_mol[current_mol-1]);
 			labels_mol.RemoveAt(current_mol-1);
-			Destroy(GetComponent<Main> ().molecules[current_mol].Gameobject);
+			for(int i=0;i<Main.total_frames;i++){
+
+			Destroy(GetComponent<Main> ().molecules[current_mol].Gameobject[i]);
+			}
 			GetComponent<Main> ().molecules.RemoveAt(current_mol);
 			Resources.UnloadUnusedAssets ();
 			current_mol -=1;
@@ -320,7 +322,6 @@ public class MainUI : MonoBehaviour {
 	{
 		GetComponent<Main> ().molecules [current_mol].type = StringToTypeDisplay(s);
 
-		
 	}
 
 

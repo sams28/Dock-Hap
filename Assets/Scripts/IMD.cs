@@ -62,14 +62,22 @@ public class IMD : MonoBehaviour {
 	
 	public void initIMD(){
 
+		Main.current_frame = Main.total_frames;
+		Main.total_frames += 1;
+
+
 		molecules = GetComponent<Main> ().molecules;
 		energies= new IMDEnergies();
-		temp_pos = new float[molecules[0].Atoms.Count*3];;
+		temp_pos = new float[molecules[0].Atoms.Count*3];
 		if(IMD_isConnected())
 			IMD_stop();
 		
 		IMD_init(server, port);
 		IMD_setNbParticles(molecules[0].Atoms.Count);
+
+		for (int i =0; i<molecules.Count; i++) {
+			molecules[i].Gameobject[Main.current_frame]=molecules[i].Gameobject[Main.current_frame-1];
+		}
 		init = true;
 
 	}
@@ -123,7 +131,7 @@ public class IMD : MonoBehaviour {
 				molecules[i].Update(temp_pos);
 				molecules[i].Energies = energies;
 
-				molecules[i].Gameobject.GetComponent<DisplayMolecule>().UpdateMol();
+				molecules[i].Gameobject[Main.current_frame].GetComponent<DisplayMolecule>().UpdateMol();
 			}
 
 		}

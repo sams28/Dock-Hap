@@ -7,7 +7,7 @@ Material:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_Name: Meshs
-  m_Shader: {fileID: 4800000, guid: 2e40a69bd3e942844a34210bee7bcf07, type: 3}
+  m_Shader: {fileID: 4800000, guid: 33072a82d5339ba4ba1282ad4ef9bb57, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 5
   m_CustomRenderQueue: -1
@@ -179,6 +179,10 @@ Material:
         first:
           name: _PointSize
         second: 5
+      data:
+        first:
+          name: _LineWidth
+        second: 1.57000005
     m_Colors:
       data:
         first:
@@ -215,7 +219,7 @@ Material:
       data:
         first:
           name: _BaseScale
-        second: {r: 1, g: 1, b: 1, a: 0}
+        second: {r: 1, g: 2.25, b: 1, a: 0}
       data:
         first:
           name: _Emission
@@ -224,3 +228,11 @@ Material:
         first:
           name: _ReflectColor
         second: {r: 1, g: 1, b: 1, a: .5}
+      data:
+        first:
+          name: _LineColor
+        second: {r: 1, g: 1, b: 1, a: 1}
+      data:
+        first:
+          name: _GridColor
+        second: {r: 0, g: 0, b: 0, a: 1}

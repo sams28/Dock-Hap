@@ -78,7 +78,7 @@ public class Select{
 		minDistChain = m.Chains [0];
 		minDistResidue = m.Chains [0].Residues [0];
 		minDistAtom = m.Chains [0].Residues [0].Atoms [0];
-		float minDist = Vector3.Distance(minDistAtom.Location,d.transform.position);
+		float minDist = Vector3.Distance(minDistAtom.Location[Main.current_frame],d.transform.position);
 		float dist;
 		
 		//Future implementation ?
@@ -104,7 +104,7 @@ public class Select{
 				for (int k =0; k < m.Chains[i].Residues[j].Atoms.Count; k++) {
 					
 					
-					dist =  Vector3.Distance(m.Chains[i].Residues[j].Atoms[k].Location,d.transform.position);
+					dist =  Vector3.Distance(m.Chains[i].Residues[j].Atoms[k].Location[Main.current_frame],d.transform.position);
 					if(dist < minDist){
 						minDist = dist;
 						minDistAtom = m.Chains[i].Residues[j].Atoms[k];
@@ -131,7 +131,7 @@ public class Select{
 		for(int i=0;i<selectedAtoms.Count;i++){
 			p[index].size = 1.0f;
 			
-			p[index].position = m.Atoms[selectedAtoms[i].Number].Location;
+			p[index].position = m.Atoms[selectedAtoms[i].Number].Location[Main.current_frame];
 			p[index].color = c;
 			index++;
 			
@@ -141,7 +141,7 @@ public class Select{
 			for(int j=0;j<selectedResidues[i].Atoms.Count;j++){
 				p[index].size = 1.0f;
 				
-				p[index].position = m.Atoms[selectedResidues[i].Atoms[j].Number].Location;
+				p[index].position = m.Atoms[selectedResidues[i].Atoms[j].Number].Location[Main.current_frame];
 				p[index].color = c;
 				
 				index++;
@@ -155,7 +155,7 @@ public class Select{
 			for(int j=0;j<selectedChains[i].Atoms.Count;j++){
 				p[index].size = 1.0f;
 				
-				p[index].position = m.Atoms[selectedChains[i].Atoms[j].Number].Location;
+				p[index].position = m.Atoms[selectedChains[i].Atoms[j].Number].Location[Main.current_frame];
 				p[index].color = c;
 				
 				index++;
@@ -171,7 +171,7 @@ public class Select{
 		case SelectDisplay.Atom :
 			
 			p[index].size = 1.0f;
-			p[index].position = minDistAtom.Location;
+			p[index].position = minDistAtom.Location[Main.current_frame];
 			p[index].color = c;
 			index++;
 			break;
@@ -180,7 +180,7 @@ public class Select{
 			for (int i=0; i<minDistResidue.Atoms.Count; i++) {
 				
 				p[index].size = 1.0f;
-				p[index].position = minDistResidue.Atoms[i].Location;
+				p[index].position = minDistResidue.Atoms[i].Location[Main.current_frame];
 				p[index].color = c;
 				index++;
 			}
@@ -190,7 +190,7 @@ public class Select{
 			for (int i=0; i<minDistChain.Atoms.Count; i++) {
 				
 				p[index].size = 1.0f;
-				p[index].position = minDistChain.Atoms[i].Location;
+				p[index].position = minDistChain.Atoms[i].Location[Main.current_frame];
 				p[index].color = c;
 				index++;
 				
@@ -246,7 +246,7 @@ public class SelectAtoms : MonoBehaviour {
 			Select s= new Select();
 
 
-			s.g = (GameObject)Instantiate (Resources.Load("Prefabs/halo") as GameObject, GetComponent<Main>().molecules[0].Location, Quaternion.identity);
+			s.g = (GameObject)Instantiate (Resources.Load("Prefabs/halo") as GameObject, GetComponent<Main>().molecules[0].Location[Main.current_frame], Quaternion.identity);
 			s.g.transform.SetParent (Camera.main.transform);
 
 			s.par = s.g.GetComponent<ParticleSystem> ();
@@ -286,7 +286,7 @@ public class SelectAtoms : MonoBehaviour {
 				
 				selects[index].MinDistAtom.Selected[index] = true;
 		
-				selects[index].MinDistAtom.ForceGameobject[index] = (GameObject)Instantiate (Resources.Load("Prefabs/Arrow") as GameObject,selects[index].MinDistAtom.Location, Quaternion.identity);
+				selects[index].MinDistAtom.ForceGameobject[index] = (GameObject)Instantiate (Resources.Load("Prefabs/Arrow") as GameObject,selects[index].MinDistAtom.Location[Main.current_frame], Quaternion.identity);
 				selects[index].MinDistAtom.ForceGameobject[index].transform.SetParent(transform,true);
 				selects[index].selectedAtoms.Add(selects[index].MinDistAtom);
 				
@@ -306,7 +306,7 @@ public class SelectAtoms : MonoBehaviour {
 				selects[index].MinDistResidue.Selected[index] = true;
 
 
-				selects[index].MinDistResidue.ForceGameobject[index] =(GameObject)Instantiate (Resources.Load("Prefabs/Arrow") as GameObject,selects[index].MinDistResidue.Location, Quaternion.identity);
+				selects[index].MinDistResidue.ForceGameobject[index] =(GameObject)Instantiate (Resources.Load("Prefabs/Arrow") as GameObject,selects[index].MinDistResidue.Location[Main.current_frame], Quaternion.identity);
 				selects[index].MinDistResidue.ForceGameobject[index].transform.SetParent(transform,true);
 				selects[index].selectedResidues.Add(selects[index].MinDistResidue);
 			}
@@ -322,7 +322,7 @@ public class SelectAtoms : MonoBehaviour {
 			if(!selects[index].MinDistChain.Selected[index]){
 				
 				selects[index].MinDistChain.Selected[index] = true;
-				selects[index].MinDistChain.ForceGameobject[index] = (GameObject)Instantiate (Resources.Load("Prefabs/Arrow") as GameObject,selects[index].MinDistChain.Location, Quaternion.identity);
+				selects[index].MinDistChain.ForceGameobject[index] = (GameObject)Instantiate (Resources.Load("Prefabs/Arrow") as GameObject,selects[index].MinDistChain.Location[Main.current_frame], Quaternion.identity);
 				selects[index].MinDistChain.ForceGameobject[index].transform.SetParent(transform,true);
 				selects[index].selectedChains.Add(selects[index].MinDistChain);
 				

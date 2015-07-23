@@ -57,7 +57,7 @@ public class ApplyForces : MonoBehaviour {
 
 
 
-			Vector3 minAtm = s.Selects[i].MinDistAtom.Location;
+			Vector3 minAtm = s.Selects[i].MinDistAtom.Location[Main.current_frame];
 			float radius =  s.Selects[i].MinDistAtom.AtomRadius;
 			Vector3 pos = vrpn.Devices[i].obj.transform.position;
 
@@ -164,7 +164,7 @@ public class ApplyForces : MonoBehaviour {
 					lastPosition[z] = vrpn.Devices[z].obj.transform.position;
 					lastBarycentre[z] = Vector3.zero;
 					for(int i = 0; i < l.Count;i++)
-						lastBarycentre[z]+=l[i].Location;
+						lastBarycentre[z]+=l[i].Location[Main.current_frame];
 					
 					lastBarycentre[z] /= l.Count;
 
@@ -183,7 +183,7 @@ public class ApplyForces : MonoBehaviour {
 
 							Vector3 barycentre = Vector3.zero;
 							for(int i = 0; i < l.Count;i++)
-								barycentre+=l[i].Location;
+								barycentre+=l[i].Location[Main.current_frame];
 
 							barycentre /= l.Count;
 
@@ -211,7 +211,7 @@ public class ApplyForces : MonoBehaviour {
 							case SelectDisplay.Atom :
 
 								for(int i = 0; i <s.Selects[z].selectedAtoms.Count;i++){
-									s.Selects[z].selectedAtoms[i].ForceGameobject[z].transform.localPosition = s.Selects[z].selectedAtoms[i].Location;
+									s.Selects[z].selectedAtoms[i].ForceGameobject[z].transform.localPosition = s.Selects[z].selectedAtoms[i].Location[Main.current_frame];
 									s.Selects[z].selectedAtoms[i].ForceGameobject[z].transform.up = force_util;
 									s.Selects[z].selectedAtoms[i].ForceGameobject[z].transform.localScale = new Vector3(dist/50.0f,dist/8.0f,dist/50.0f);
 
@@ -221,7 +221,7 @@ public class ApplyForces : MonoBehaviour {
 								break;
 							case SelectDisplay.Residue :
 								for(int i=0;i<s.Selects[z].selectedResidues.Count;i++){
-									s.Selects[z].selectedResidues[i].ForceGameobject[z].transform.localPosition = s.Selects[z].selectedResidues[i].Location;
+									s.Selects[z].selectedResidues[i].ForceGameobject[z].transform.localPosition = s.Selects[z].selectedResidues[i].Location[Main.current_frame];
 									s.Selects[z].selectedResidues[i].ForceGameobject[z].transform.up = force_util;
 									s.Selects[z].selectedResidues[i].ForceGameobject[z].transform.localScale = new Vector3(dist/50.0f,dist/8.0f,dist/50.0f);
 
@@ -232,7 +232,7 @@ public class ApplyForces : MonoBehaviour {
 								break;
 							case SelectDisplay.Chain :
 								for(int i=0;i<s.Selects[z].selectedChains.Count;i++){
-									s.Selects[z].selectedChains[i].ForceGameobject[z].transform.localPosition = s.Selects[z].selectedChains[i].Location;
+									s.Selects[z].selectedChains[i].ForceGameobject[z].transform.localPosition = s.Selects[z].selectedChains[i].Location[Main.current_frame];
 									s.Selects[z].selectedChains[i].ForceGameobject[z].transform.up = force_util;
 									s.Selects[z].selectedChains[i].ForceGameobject[z].transform.localScale = new Vector3(dist/50.0f,dist/8.0f,dist/50.0f);
 

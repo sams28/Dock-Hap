@@ -35,10 +35,11 @@ public class DisplayMeshs : DisplayMolecule {
 	
 	}
 
-	public override void DisplayMol (ColorDisplay c, TypeDisplay t)
+	public override void DisplayMol (ColorDisplay c, TypeDisplay t,int f)
 	{
 		type = t;
 		color = c;
+		frame = f;
 		switch (t) {
 		case TypeDisplay.Points : DisplayMolPointCloud();break;
 		case TypeDisplay.Lines :  DisplayMolLines();break;
@@ -49,36 +50,6 @@ public class DisplayMeshs : DisplayMolecule {
 		}
 	}
 
-	public override void DisplayHetAtm (bool showHetAtoms)
-	{
-
-		/*
-		for (int i =0; i < mol.Chains.Count; i++) {
-			
-			if (mol.Chains [i].Type == "HETATM") {
-
-				for(int j=0;j<mol.Chains[i].Atoms.Count;j++ ){
-
-					points[mol.Chains[i].Atoms[j].Number] = Vector3.zero;
-
-
-				}
-				
-			}
-
-		}
-
-		meshes [0].vertices = points_d;
-		meshes[0].RecalculateBounds();*/
-		throw new NotImplementedException ();
-
-
-	}
-
-	public override void DisplayWater (bool showWater)
-	{
-		throw new NotImplementedException ();
-	}
 
 
 
@@ -109,7 +80,7 @@ public class DisplayMeshs : DisplayMolecule {
 
 				if(mol.Atoms[i].Active){
 
-				points [index] = mol.Atoms [i].Location;
+				points [index] = mol.Atoms [i].Location[frame];
 				colors[index] = setColorAtm (mol.Atoms [i], color);
 				indices[index] =  index;
 				
@@ -166,7 +137,7 @@ public class DisplayMeshs : DisplayMolecule {
 			while (i < mol.Atoms.Count && index < combine.Length) {
 
 
-				standard_gameobject.transform.localPosition =mol.Atoms [i].Location;
+				standard_gameobject.transform.localPosition =mol.Atoms [i].Location[frame];
 				standard_gameobject.transform.localScale = new Vector3(scale,scale,scale);
 
 
@@ -222,23 +193,23 @@ public class DisplayMeshs : DisplayMolecule {
 			while (i < mol.Bonds.Count && index*4+3 < MAX_SIZE_MESH) {
 
 				if(mol.Atoms [mol.Bonds [i] [0]].Active && mol.Atoms [mol.Bonds [i] [1]].Active){
-				points [index * 4] = mol.Atoms [mol.Bonds [i] [0]].Location;
-				points [index * 4 + 1] = (mol.Atoms [mol.Bonds [i] [0]].Location + mol.Atoms [mol.Bonds [i] [1]].Location)/2 ;
-				points [index * 4 + 2] = (mol.Atoms [mol.Bonds [i] [0]].Location + mol.Atoms [mol.Bonds [i] [1]].Location)/2 ;
-				points [index * 4 + 3] = mol.Atoms [mol.Bonds [i] [1]].Location;
+					points [index * 4] = mol.Atoms [mol.Bonds [i] [0]].Location[frame];
+					points [index * 4 + 1] = (mol.Atoms [mol.Bonds [i] [0]].Location[frame] + mol.Atoms [mol.Bonds [i] [1]].Location[frame])/2 ;
+					points [index * 4 + 2] = (mol.Atoms [mol.Bonds [i] [0]].Location[frame] + mol.Atoms [mol.Bonds [i] [1]].Location[frame])/2 ;
+					points [index * 4 + 3] = mol.Atoms [mol.Bonds [i] [1]].Location[frame];
 
 
-				colors[index * 4] = setColorAtm (mol.Atoms [mol.Bonds [i] [0]], color);
-				colors[index * 4 + 1] =setColorAtm (mol.Atoms [mol.Bonds [i] [0]], color);
-				colors[index * 4 + 2] = setColorAtm (mol.Atoms [mol.Bonds [i] [1]], color);
-				colors[index * 4 + 3] = setColorAtm (mol.Atoms [mol.Bonds [i] [1]], color);
-			
+					colors[index * 4] = setColorAtm (mol.Atoms [mol.Bonds [i] [0]], color);
+					colors[index * 4 + 1] =setColorAtm (mol.Atoms [mol.Bonds [i] [0]], color);
+					colors[index * 4 + 2] = setColorAtm (mol.Atoms [mol.Bonds [i] [1]], color);
+					colors[index * 4 + 3] = setColorAtm (mol.Atoms [mol.Bonds [i] [1]], color);
+				
 
-				indices[index * 4] = index * 4;
-				indices[index * 4 + 1] = index * 4 + 1;
-				indices[index * 4 + 2] = index * 4 + 2;
-				indices[index * 4 + 3] = index * 4 + 3;
-				index++;
+					indices[index * 4] = index * 4;
+					indices[index * 4 + 1] = index * 4 + 1;
+					indices[index * 4 + 2] = index * 4 + 2;
+					indices[index * 4 + 3] = index * 4 + 3;
+					index++;
 				}
 				i++;
 			}
@@ -307,10 +278,10 @@ public class DisplayMeshs : DisplayMolecule {
 
 					}
 					else{
-					points [index] = mol.Atoms [mol.ChainsBonds [c] [i]].Location;
-					colors[index] = setColorAtm (mol.Atoms [mol.ChainsBonds [c] [i]], color);
-					indices[index] = index;
-					index++;
+						points [index] = mol.Atoms [mol.ChainsBonds [c] [i]].Location[frame];
+						colors[index] = setColorAtm (mol.Atoms [mol.ChainsBonds [c] [i]], color);
+						indices[index] = index;
+						index++;
 					i++;
 					}
 					
@@ -364,7 +335,7 @@ public class DisplayMeshs : DisplayMolecule {
 			while (i < mol.Atoms.Count && index < MAX_SIZE_MESH) {
 				
 
-				points[index] =  mol.Atoms[i].Location;
+				points[index] =  mol.Atoms[i].Location[Main.current_frame];
 				i++;
 				index++;
 			}
@@ -393,10 +364,10 @@ public class DisplayMeshs : DisplayMolecule {
 			
 			while (i < mol.Bonds.Count && index*4+3 < MAX_SIZE_MESH) {
 
-				points [index * 4] = mol.Atoms [mol.Bonds [i] [0]].Location;
-				points [index * 4 + 1] = (mol.Atoms [mol.Bonds [i] [0]].Location + mol.Atoms [mol.Bonds [i] [1]].Location)/2 ;
-				points [index * 4 + 2] = (mol.Atoms [mol.Bonds [i] [0]].Location + mol.Atoms [mol.Bonds [i] [1]].Location)/2 ;
-				points [index * 4 + 3] = mol.Atoms [mol.Bonds [i] [1]].Location;
+				points [index * 4] = mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame];
+				points [index * 4 + 1] = (mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame] + mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame])/2 ;
+				points [index * 4 + 2] = (mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame] + mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame])/2 ;
+				points [index * 4 + 3] = mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame];
 
 
 				i++;
@@ -432,7 +403,7 @@ public class DisplayMeshs : DisplayMolecule {
 			
 			
 				while (i < mol.ChainsBonds[c].Count && index < MAX_SIZE_MESH) {
-					points [index] = mol.Atoms [mol.ChainsBonds [c] [i]].Location;
+					points [index] = mol.Atoms [mol.ChainsBonds [c] [i]].Location[Main.current_frame];
 					i++;
 					index++;
 				}
@@ -529,9 +500,9 @@ public class DisplayMeshs : DisplayMolecule {
 
 			if (mol.Atoms [o].Active) {
 
-				i = Mathf.RoundToInt ((mol.Atoms [o].Location.x - mol.MinValue.x) * delta.x + fudgeFactor);
-				j = Mathf.RoundToInt ((mol.Atoms [o].Location.y - mol.MinValue.y) * delta.y + fudgeFactor);
-				k = Mathf.RoundToInt ((mol.Atoms [o].Location.z - mol.MinValue.z) * delta.z + fudgeFactor);
+				i = Mathf.RoundToInt ((mol.Atoms [o].Location[frame].x - mol.MinValue.x) * delta.x + fudgeFactor);
+				j = Mathf.RoundToInt ((mol.Atoms [o].Location[frame].y - mol.MinValue.y) * delta.y + fudgeFactor);
+				k = Mathf.RoundToInt ((mol.Atoms [o].Location[frame].z - mol.MinValue.z) * delta.z + fudgeFactor);
 				Vector3 v1 = new Vector3 (i, j, k);
 				
 				atomRadius = mol.Atoms [o].AtomRadius;				
@@ -554,9 +525,9 @@ public class DisplayMeshs : DisplayMolecule {
 		/*
 
 		for (int o =0; o<mol.Atoms.Count; o++) {
-			i = Mathf.RoundToInt ((mol.Atoms [o].Location.x - mol.MinValue.x)+fudgeFactor.x);
-			j = Mathf.RoundToInt ((mol.Atoms [o].Location.y - mol.MinValue.y)+fudgeFactor.y);
-			k = Mathf.RoundToInt ((mol.Atoms [o].Location.z - mol.MinValue.z)+fudgeFactor.z);
+			i = Mathf.RoundToInt ((mol.Atoms [o].Location[frame].x - mol.MinValue.x)+fudgeFactor.x);
+			j = Mathf.RoundToInt ((mol.Atoms [o].Location[frame].y - mol.MinValue.y)+fudgeFactor.y);
+			k = Mathf.RoundToInt ((mol.Atoms [o].Location[frame].z - mol.MinValue.z)+fudgeFactor.z);
 			Vector3 v1 = new Vector3 (i, j, k);
 
 
@@ -588,7 +559,6 @@ public class DisplayMeshs : DisplayMolecule {
 		//gridS = SmoothVoxels (gridS);
 
 		mesh = MarchingCubes.CreateMesh(gridS,VertColor);
-
 
 		//Normals
 

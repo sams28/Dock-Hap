@@ -21,7 +21,11 @@ public class Main : MonoBehaviour {
 	public List<Molecule> molecules;
 	public Material mainMaterial;
 	public const int MAX_NUM_DEVICES =10;
-
+	public const int MAX_FRAMES =10000;
+	static public int current_frame =0;
+	static public int total_frames =1;
+	public int start_frame =0;
+	public int end_frame =0;
 	#if UNITY_EDITOR
 	void Awake () {
 		QualitySettings.vSyncCount = 0;
@@ -46,8 +50,8 @@ public class Main : MonoBehaviour {
 		molecules[0].CalculateBonds();
 		SetMolecule ("all",true);
 
-		GetComponent<MouseControl>().center = molecules[0].Location;
-		Camera.main.transform.localPosition = new Vector3 (molecules[0].Location.x, molecules[0].Location.y, /*target.z*/ - (Vector3.Distance (molecules[0].MaxValue, molecules[0].MinValue)));
+		GetComponent<MouseControl>().center = molecules[0].Location[0];
+		Camera.main.transform.localPosition = new Vector3 (molecules[0].Location[0].x, molecules[0].Location[0].y, /*target.z*/ - (Vector3.Distance (molecules[0].MaxValue, molecules[0].MinValue)));
 		SetColors (1);
 
 		mainMaterial = new Material(Resources.Load("Materials/UnityObj") as Material);
@@ -57,8 +61,6 @@ public class Main : MonoBehaviour {
 
 	}
 
-
-	
 	// Update is called once per frame
 	void Update () {
 
@@ -211,8 +213,6 @@ public class Main : MonoBehaviour {
 				}
 				
 				break;
-
-
 			default:
 				break;
 	
@@ -226,43 +226,72 @@ public class Main : MonoBehaviour {
 	}
 
 
+	public void SetFrames(string s){
+		string[] sl;
+		
+		sl = s.Split (new Char[] {':'}, StringSplitOptions.RemoveEmptyEntries);
+		if (sl.Length == 1) {
+			start_frame = int.Parse (sl [0]);
+			end_frame = int.Parse (sl [0]);
+		} else if (sl.Length == 2) {
+			start_frame = int.Parse (sl [0]);
+			end_frame = int.Parse (sl [1]);
+		} else {
+			start_frame = 0;
+			end_frame = 0;
+		}
+
+
+		Debug.Log (start_frame + " " +end_frame+ " "+ total_frames);
+
+	}
+
+
 
 	public void DisplayMolecules(int current_mol){
 
 
-
-		if (molecules[current_mol].Gameobject != null) {
-			Destroy (molecules[current_mol].Gameobject);
-			Resources.UnloadUnusedAssets ();
-
+		
+		for (int i =0; i<total_frames; i++) {
+		
+			if (molecules [current_mol].Gameobject [i] != null) {
+				Destroy (molecules [current_mol].Gameobject [i]);
+				Resources.UnloadUnusedAssets ();
+			
+			}
 		}
 
-		molecules[current_mol].Gameobject = (GameObject)Instantiate (Resources.Load ("Prefabs/Molecule") as GameObject, Vector3.zero, Quaternion.identity);
-
-		molecules[current_mol].Gameobject.transform.SetParent (transform, true);
+		for (int i =start_frame; i<end_frame+1; i++) {
 
 
-		switch (molecules[current_mol].render) {
-		case RenderDisplay.UnityObjects:
-			molecules[current_mol].Gameobject.AddComponent<DisplayUnityObj> ();
-			break;
-		case RenderDisplay.Particles:
-			molecules[current_mol].Gameobject.AddComponent<DisplayParticles> ();
-			break;
-		case RenderDisplay.Meshs:
-			molecules[current_mol].Gameobject.AddComponent<DisplayMeshs> ();
-			break;
-		default:
-			break;
-		}
 
-		molecules[current_mol].Gameobject.GetComponent<DisplayMolecule> ().Init (molecules[current_mol], mainMaterial);
-		molecules[current_mol].Gameobject.GetComponent<DisplayMolecule> ().DisplayMol (molecules[current_mol].color, molecules[current_mol].type);
 
-		//molecules [i].molecule.GetComponent<DisplayMolecule>().SetColors(ColorDisplay.Name);
+			molecules [current_mol].Gameobject[i] = (GameObject)Instantiate (Resources.Load ("Prefabs/Molecule") as GameObject, Vector3.zero, Quaternion.identity);
+
+			molecules [current_mol].Gameobject[i].transform.SetParent (transform, true);
+
+
+			switch (molecules [current_mol].render) {
+			case RenderDisplay.UnityObjects:
+				molecules [current_mol].Gameobject[i].AddComponent<DisplayUnityObj> ();
+				break;
+			case RenderDisplay.Particles:
+				molecules [current_mol].Gameobject[i].AddComponent<DisplayParticles> ();
+				break;
+			case RenderDisplay.Meshs:
+				molecules [current_mol].Gameobject[i].AddComponent<DisplayMeshs> ();
+				break;
+			default:
+				break;
+			}
+
+			molecules [current_mol].Gameobject[i].GetComponent<DisplayMolecule> ().Init (molecules [current_mol], mainMaterial);
+			molecules [current_mol].Gameobject[i].GetComponent<DisplayMolecule> ().DisplayMol (molecules [current_mol].color, molecules [current_mol].type, i);
+
+			//molecules [i].molecule.GetComponent<DisplayMolecule>().SetColors(ColorDisplay.Name);
 		
 
-
+		}
 
 
 	}
@@ -432,6 +461,9 @@ public class Main : MonoBehaviour {
 
 
 	}
+
+
+
 
 
 }

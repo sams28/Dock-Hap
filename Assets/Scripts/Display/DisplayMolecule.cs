@@ -12,6 +12,7 @@ public abstract class DisplayMolecule : MonoBehaviour {
 
 	protected TypeDisplay type;
 	protected ColorDisplay color;
+	protected int frame;
 	protected Material mat;
 	protected Molecule mol;
 	protected float minCharges;
@@ -48,11 +49,8 @@ public abstract class DisplayMolecule : MonoBehaviour {
 	}
 
 
-	abstract public void DisplayMol (ColorDisplay color,TypeDisplay type);
+	abstract public void DisplayMol (ColorDisplay color,TypeDisplay type,int frame);
 	abstract public void UpdateMol ();
-	abstract public void DisplayHetAtm (bool showHetAtoms);
-	abstract public void DisplayWater (bool showWater);
-
 
 
 

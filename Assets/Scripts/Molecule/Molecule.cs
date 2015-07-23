@@ -32,8 +32,8 @@ namespace MoleculeData{
 
 	public abstract class Mol_Object {
 
-		protected Vector3 location;
-		protected GameObject gameobject;
+		protected Vector3[] location;
+		protected GameObject[] gameobject;
 		protected GameObject[] forceGameobject;
 		protected Color objColor;
 		protected Material objMaterial;
@@ -42,6 +42,8 @@ namespace MoleculeData{
 
 		protected Mol_Object(){
 
+			location = new Vector3[Main.MAX_FRAMES];
+			gameobject = new GameObject[Main.MAX_FRAMES];
 			active =false;
 			selected =new bool[Main.MAX_NUM_DEVICES];
 			for (int i =0; i<Main.MAX_NUM_DEVICES; i++)
@@ -50,8 +52,12 @@ namespace MoleculeData{
 		}
 
 		protected Mol_Object(Mol_Object m){
-			location = m.location;
-			gameobject = m.gameobject;
+			location = new Vector3[Main.MAX_FRAMES];
+			m.location.CopyTo(location,0);
+
+			gameobject = new GameObject[Main.MAX_FRAMES];
+			m.gameobject.CopyTo(gameobject,0);
+
 			selected =new bool[Main.MAX_NUM_DEVICES];
 			m.selected.CopyTo(selected,0);
 			forceGameobject = new GameObject[Main.MAX_NUM_DEVICES];
@@ -61,7 +67,7 @@ namespace MoleculeData{
 
 		}
 
-		public Vector3 Location{ 
+		public Vector3[] Location{ 
 			get{return location;} 
 			set{ location = value; }
 		}
@@ -89,7 +95,7 @@ namespace MoleculeData{
 		}
 
 
-		public GameObject Gameobject{
+		public GameObject[] Gameobject{
 			get{return gameobject;}
 			set{gameobject = value;}
 		}
@@ -156,7 +162,7 @@ namespace MoleculeData{
 
 
 			number = num;
-			location = l;
+			location[0] = l;
 			atomFullName = name;
 			atomName = name [0].ToString();
 			atomCharge = charge;
@@ -286,12 +292,12 @@ namespace MoleculeData{
 			Vector3 bary = Vector3.zero;
 			
 			for (int i=0; i<Atoms.Count; i++) {	
-				Vector3 position = Atoms [i].Location;
+				Vector3 position = Atoms [i].Location[Main.current_frame];
 				bary = bary + (new Vector3 (position [0], position [1], position [2]));
 
 			}
 
-			location = bary/Atoms.Count;
+			location[Main.current_frame] = bary/Atoms.Count;
 			
 			
 		}
@@ -371,14 +377,14 @@ namespace MoleculeData{
 			for (int i=0; i<Residues.Count; i++) {
 				for (int j=0; j<Residues[i].Atoms.Count; j++) {
 
-					Vector3 position = Residues [i].Atoms [j].Location;
+					Vector3 position = Residues [i].Atoms [j].Location[Main.current_frame];
 
 					bary = bary + (new Vector3 (position [0], position [1], position [2]));
 
 				}
 			}
 
-			location = bary/atoms.Count;
+			location[Main.current_frame] = bary/atoms.Count;
 
 			
 		}
@@ -508,7 +514,6 @@ namespace MoleculeData{
 		public TypeDisplay type= TypeDisplay.Points;
 		public RenderDisplay render = RenderDisplay.Meshs;
 		public SelectDisplay select= SelectDisplay.Atom;
-
 
 
 		public Molecule() : base(){
@@ -671,7 +676,7 @@ namespace MoleculeData{
 					Chains[i].Residues[j].CalculateCenter();
 					for (int k=0; k<Chains[i].Residues[j].Atoms.Count; k++) {
 					
-						Vector3 position = Chains [i].Residues [j].Atoms [k].Location;
+						Vector3 position = Chains [i].Residues [j].Atoms [k].Location[Main.current_frame];
 
 						minPoint = Vector3.Min (minPoint, position);
 						maxPoint = Vector3.Max (maxPoint, position);
@@ -680,7 +685,7 @@ namespace MoleculeData{
 				}
 			}
 
-			location = bary/Atoms.Count;
+			location[Main.current_frame] = bary/Atoms.Count;
 
 			//Debug.Log("centerPoint:"+location + " min/max " + minPoint + "/" + maxPoint);
 
@@ -748,7 +753,7 @@ namespace MoleculeData{
 					if ((type1 == "H") && (type2 == "H"))
 						continue;
 
-					if (Vector3.Distance (atom_a.Location, atom_b.Location) <= cutoff) {
+					if (Vector3.Distance (atom_a.Location[Main.current_frame], atom_b.Location[Main.current_frame]) <= cutoff) {
 
 						if (type1 == "H") {
 
@@ -803,7 +808,7 @@ namespace MoleculeData{
 
 				Vector3 tem = new Vector3 (-temp [i*3], temp [i*3+ 1], temp [i*3+2]);
 
-				Atoms[i].Location = Vector3.Lerp (Atoms[i].Location, tem, 0.2f);;
+				Atoms[i].Location[Main.current_frame] = Vector3.Lerp (Atoms[i].Location[Main.current_frame], tem, 0.2f);;
 
 			}
 				

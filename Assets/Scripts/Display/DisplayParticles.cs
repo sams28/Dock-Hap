@@ -12,25 +12,17 @@ public class DisplayParticles : DisplayMolecule {
 	private ParticleSystem.Particle[] particles_bonds;
 
 
-	public override void DisplayHetAtm (bool showHetAtoms)
-	{
-		throw new NotImplementedException ();
-	}
-
-	public override void DisplayWater (bool showWater)
-	{
-		throw new NotImplementedException ();
-	}
 
 
 
 
 
 
-	public override void DisplayMol (ColorDisplay c, TypeDisplay t)
+	public override void DisplayMol (ColorDisplay c, TypeDisplay t,int f)
 	{
 		type = t;
 		color = c;
+		frame = f;
 		switch (t) {
 		case TypeDisplay.Points :  DisplayMolPoints();break;
 		//case TypeDisplay.Lines :  DisplayMolLines();break;
@@ -50,8 +42,8 @@ public class DisplayParticles : DisplayMolecule {
 
 		particles_atoms = new ParticleSystem.Particle[mol.Atoms.Count];
 		//the Shuriken object must be visible for the camera, so we set it to the camera
-		mol.Gameobject.transform.localPosition = mol.Location;
-		mol.Gameobject.transform.SetParent (Camera.main.transform);
+		mol.Gameobject[frame].transform.localPosition = mol.Location[frame];
+		mol.Gameobject[frame].transform.SetParent (Camera.main.transform);
 
 		for (int i =0; i < mol.Atoms.Count; i++) {
 			if(mol.Atoms[i].Active){
@@ -59,8 +51,8 @@ public class DisplayParticles : DisplayMolecule {
 			case TypeDisplay.VDW : particles_atoms[i].size = 1.5f*scale*mol.Atoms[i].AtomRadius;break;
 			default : particles_atoms[i].size = scale;break;
 			}
-			particles_atoms[i].position = mol.Atoms[i].Location;
-			particles_atoms[i].color = setColorAtm(mol.Atoms[i],color);
+				particles_atoms[i].position = mol.Atoms[i].Location[frame];
+				particles_atoms[i].color = setColorAtm(mol.Atoms[i],color);
 				
 			}	
 		}
@@ -76,19 +68,19 @@ public class DisplayParticles : DisplayMolecule {
 		
 		particles_bonds = new ParticleSystem.Particle[mol.Bonds.Count*2];
 		//the Shuriken object must be visible for the camera, so we set it to the camera
-		mol.Gameobject.transform.localPosition = mol.Location;
-		mol.Gameobject.transform.SetParent (Camera.main.transform);
+		mol.Gameobject[frame].transform.localPosition = mol.Location[frame];
+		mol.Gameobject[frame].transform.SetParent (Camera.main.transform);
 		
 		for (int i =0; i < mol.Bonds.Count; i++) {
 			
 
 			particles_bonds[i*2].size = scale;
-			particles_bonds[i*2].position = mol.Atoms [mol.Bonds [i] [0]].Location;
+			particles_bonds[i*2].position = mol.Atoms [mol.Bonds [i] [0]].Location[frame];
 			particles_bonds[i*2].rotation = 60.0f;
 			particles_bonds[i*2].color = setColorAtm(mol.Atoms [mol.Bonds [i] [0]],color);
 
 			particles_bonds[i*2+1].size = scale;
-			particles_bonds[i*2+1].position = mol.Atoms [mol.Bonds [i] [1]].Location;
+			particles_bonds[i*2+1].position = mol.Atoms [mol.Bonds [i] [1]].Location[frame];
 			particles_bonds[i*2+1].rotation = 60.0f;
 			particles_bonds[i*2+1].color = setColorAtm(mol.Atoms [mol.Bonds [i] [1]],color);
 
@@ -122,7 +114,7 @@ public class DisplayParticles : DisplayMolecule {
 			
 
 			
-			particles_atoms[i].position  = mol.Atoms[i].Location;
+			particles_atoms[i].position  = mol.Atoms[i].Location[Main.current_frame];
 			
 		}
 

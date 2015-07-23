@@ -18,10 +18,11 @@ public class DisplayUnityObj : DisplayMolecule {
 	
 	}
 
-	public override void DisplayMol (ColorDisplay c, TypeDisplay t)
+	public override void DisplayMol (ColorDisplay c, TypeDisplay t,int f)
 	{
 		type = t;
 		color = c;
+		frame = f;
 		switch (t) {
 		case TypeDisplay.Points :  DisplayMolSpheres();break;
 		case TypeDisplay.VDW :  DisplayMolSpheres();break;
@@ -35,9 +36,9 @@ public class DisplayUnityObj : DisplayMolecule {
 
 	public void displayAtom(Atom a,float scale){
 
-		a.Gameobject = (GameObject)Instantiate (Resources.Load("Prefabs/Atom") as GameObject, a.Location, Quaternion.identity);
-		a.Gameobject.name = a.AtomFullName;
-		a.Gameobject.transform.localScale = new Vector3(scale,scale,scale);
+		a.Gameobject[frame] = (GameObject)Instantiate (Resources.Load("Prefabs/Atom") as GameObject, a.Location[frame], Quaternion.identity);
+		a.Gameobject[frame].name = a.AtomFullName;
+		a.Gameobject[frame].transform.localScale = new Vector3(scale,scale,scale);
 		
 		
 		/* cut sphere
@@ -65,7 +66,7 @@ public class DisplayUnityObj : DisplayMolecule {
 		*/
 		
 
-		a.Gameobject.GetComponent<Renderer>().material = setMaterialAtm(a,color);
+		a.Gameobject[frame].GetComponent<Renderer>().material = setMaterialAtm(a,color);
 
 		
 		
@@ -81,12 +82,12 @@ public class DisplayUnityObj : DisplayMolecule {
 		
 		for (int i =0; i < mol.Chains.Count; i++) {
 
-			mol.Chains[i].Gameobject = new GameObject(mol.Chains[i].ChainID);
-			mol.Chains[i].Gameobject.transform.SetParent(transform,true);
+			mol.Chains[i].Gameobject[frame] = new GameObject(mol.Chains[i].ChainID);
+			mol.Chains[i].Gameobject[frame].transform.SetParent(transform,true);
 
 			for (int j =0; j < mol.Chains[i].Residues.Count; j++) {
-				mol.Chains[i].Residues[j].Gameobject = new GameObject(mol.Chains[i].Residues[j].ResName);
-				mol.Chains[i].Residues[j].Gameobject.transform.SetParent(mol.Chains[i].Gameobject.transform,true);
+				mol.Chains[i].Residues[j].Gameobject[frame] = new GameObject(mol.Chains[i].Residues[j].ResName);
+				mol.Chains[i].Residues[j].Gameobject[frame].transform.SetParent(mol.Chains[i].Gameobject[frame].transform,true);
 				for(int k =0; k < mol.Chains[i].Residues[j].Atoms.Count; k++) {
 					switch(type){
 					case TypeDisplay.VDW : displayAtom(mol.Chains[i].Residues[j].Atoms[k],2f*scale*mol.Chains[i].Residues[j].Atoms[k].AtomRadius);break;
@@ -94,8 +95,8 @@ public class DisplayUnityObj : DisplayMolecule {
 					default : displayAtom(mol.Chains[i].Residues[j].Atoms[k],scale);break;
 					}
 
-					mol.Chains[i].Residues[j].Atoms[k].Gameobject.transform.SetParent(mol.Chains[i].Residues[j].Gameobject.transform,true);
-					mol.Chains[i].Residues[j].Atoms[k].Gameobject.SetActive(mol.Chains[i].Residues[j].Atoms[k].Active);
+					mol.Chains[i].Residues[j].Atoms[k].Gameobject[frame].transform.SetParent(mol.Chains[i].Residues[j].Gameobject[frame].transform,true);
+					mol.Chains[i].Residues[j].Atoms[k].Gameobject[frame].SetActive(mol.Chains[i].Residues[j].Atoms[k].Active);
 				}
 			}
 		
@@ -113,27 +114,27 @@ public class DisplayUnityObj : DisplayMolecule {
 
 			if(mol.Atoms [mol.Bonds [i] [0]].Active && mol.Atoms [mol.Bonds [i] [1]].Active){
 
-			GameObject b1 = (GameObject)Instantiate (Resources.Load ("Prefabs/Bond") as GameObject, mol.Atoms [mol.Bonds [i] [0]].Location, Quaternion.identity);
-			GameObject b2 = (GameObject)Instantiate (Resources.Load ("Prefabs/Bond") as GameObject, mol.Atoms [mol.Bonds [i] [1]].Location, Quaternion.identity);
-			b1.transform.SetParent(transform,true);
-			b2.transform.SetParent(transform,true);
-			b1.transform.LookAt(mol.Atoms [mol.Bonds [i] [1]].Location);
-			b2.transform.LookAt(mol.Atoms [mol.Bonds [i] [0]].Location);
-			float d = Vector3.Distance(mol.Atoms [mol.Bonds [i] [0]].Location,mol.Atoms [mol.Bonds [i] [1]].Location)/4;
-			switch(type){
-			case TypeDisplay.CPK : 
-				b1.transform.localScale = new Vector3(scale/4,scale/4,d);
-				b2.transform.localScale = new Vector3(scale/4,scale/4,d);
-				break;
-			default :
-				b1.transform.localScale = new Vector3(scale,scale,d);
-				b2.transform.localScale = new Vector3(scale,scale,d);
-				break;
-			}
-			b1.GetComponentInChildren<Renderer>().material = setMaterialAtm(mol.Atoms [mol.Bonds [i] [0]],color);
-			b2.GetComponentInChildren<Renderer>().material = setMaterialAtm(mol.Atoms [mol.Bonds [i] [1]],color);
-			bonds.Add(b1);
-			bonds.Add(b2);
+				GameObject b1 = (GameObject)Instantiate (Resources.Load ("Prefabs/Bond") as GameObject, mol.Atoms [mol.Bonds [i] [0]].Location[frame], Quaternion.identity);
+				GameObject b2 = (GameObject)Instantiate (Resources.Load ("Prefabs/Bond") as GameObject, mol.Atoms [mol.Bonds [i] [1]].Location[frame], Quaternion.identity);
+				b1.transform.SetParent(transform,true);
+				b2.transform.SetParent(transform,true);
+				b1.transform.LookAt(mol.Atoms [mol.Bonds [i] [1]].Location[frame]);
+				b2.transform.LookAt(mol.Atoms [mol.Bonds [i] [0]].Location[frame]);
+				float d = Vector3.Distance(mol.Atoms [mol.Bonds [i] [0]].Location[frame],mol.Atoms [mol.Bonds [i] [1]].Location[frame])/4;
+				switch(type){
+				case TypeDisplay.CPK : 
+					b1.transform.localScale = new Vector3(scale/4,scale/4,d);
+					b2.transform.localScale = new Vector3(scale/4,scale/4,d);
+					break;
+				default :
+					b1.transform.localScale = new Vector3(scale,scale,d);
+					b2.transform.localScale = new Vector3(scale,scale,d);
+					break;
+				}
+				b1.GetComponentInChildren<Renderer>().material = setMaterialAtm(mol.Atoms [mol.Bonds [i] [0]],color);
+				b2.GetComponentInChildren<Renderer>().material = setMaterialAtm(mol.Atoms [mol.Bonds [i] [1]],color);
+				bonds.Add(b1);
+				bonds.Add(b2);
 			}
 
 		}
@@ -157,17 +158,17 @@ public class DisplayUnityObj : DisplayMolecule {
 				}
 				else{
 
-				GameObject b1 = (GameObject)Instantiate (Resources.Load ("Prefabs/Bond2") as GameObject, mol.Atoms [mol.ChainsBonds [c] [i]].Location, Quaternion.identity);
-				b1.transform.SetParent (transform, true);
+					GameObject b1 = (GameObject)Instantiate (Resources.Load ("Prefabs/Bond2") as GameObject, mol.Atoms [mol.ChainsBonds [c] [i]].Location[frame], Quaternion.identity);
+					b1.transform.SetParent (transform, true);
 
-				b1.transform.LookAt (mol.Atoms [mol.ChainsBonds [c] [i+1]].Location);
-				float d = Vector3.Distance (mol.Atoms [mol.ChainsBonds [c] [i]].Location, mol.Atoms [mol.ChainsBonds [c] [i+1]].Location) / 2;
-				b1.GetComponentInChildren<Transform>().localScale = new Vector3(1.0f,1.0f,1.0f);
-				b1.transform.localScale = new Vector3 (scale, scale, d);
+					b1.transform.LookAt (mol.Atoms [mol.ChainsBonds [c] [i+1]].Location[frame]);
+					float d = Vector3.Distance (mol.Atoms [mol.ChainsBonds [c] [i]].Location[frame], mol.Atoms [mol.ChainsBonds [c] [i+1]].Location[frame]) / 2;
+					b1.GetComponentInChildren<Transform>().localScale = new Vector3(1.0f,1.0f,1.0f);
+					b1.transform.localScale = new Vector3 (scale, scale, d);
 
-	
-				b1.GetComponentInChildren<Renderer> ().material = setMaterialAtm (mol.Atoms [mol.ChainsBonds [c] [i]], color);
-				bonds.Add (b1);
+		
+					b1.GetComponentInChildren<Renderer> ().material = setMaterialAtm (mol.Atoms [mol.ChainsBonds [c] [i]], color);
+					bonds.Add (b1);
 				}
 			
 			
@@ -202,9 +203,9 @@ public class DisplayUnityObj : DisplayMolecule {
 
 
 
-				b1.transform.position = mol.Atoms [mol.ChainsBonds [c] [i]].Location;
-				b1.transform.LookAt (mol.Atoms [mol.ChainsBonds [c] [i+1]].Location);
-				float d = Vector3.Distance (mol.Atoms [mol.ChainsBonds [c] [i]].Location, mol.Atoms [mol.ChainsBonds [c] [i+1]].Location) / 2;
+				b1.transform.position = mol.Atoms [mol.ChainsBonds [c] [i]].Location[Main.current_frame];
+				b1.transform.LookAt (mol.Atoms [mol.ChainsBonds [c] [i+1]].Location[Main.current_frame]);
+				float d = Vector3.Distance (mol.Atoms [mol.ChainsBonds [c] [i]].Location[Main.current_frame], mol.Atoms [mol.ChainsBonds [c] [i+1]].Location[Main.current_frame]) / 2;
 
 				b1.transform.localScale = new Vector3 (scale, scale, d);
 				index++;
@@ -223,12 +224,12 @@ public class DisplayUnityObj : DisplayMolecule {
 			GameObject b1 =bonds[i*2];
 			GameObject b2 =bonds[i*2+1];
 
-			b1.transform.position = mol.Atoms [mol.Bonds [i] [0]].Location;
-			b2.transform.position = mol.Atoms [mol.Bonds [i] [1]].Location;
+			b1.transform.position = mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame];
+			b2.transform.position = mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame];
 
-			b1.transform.LookAt(mol.Atoms [mol.Bonds [i] [1]].Location);
-			b2.transform.LookAt(mol.Atoms [mol.Bonds [i] [0]].Location);
-			float d = Vector3.Distance(mol.Atoms [mol.Bonds [i] [0]].Location,mol.Atoms [mol.Bonds [i] [1]].Location)/4;
+			b1.transform.LookAt(mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame]);
+			b2.transform.LookAt(mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame]);
+			float d = Vector3.Distance(mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame],mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame])/4;
 			switch(type){
 			case TypeDisplay.CPK : 
 				b1.transform.localScale = new Vector3(scale/4,scale/4,d);
@@ -248,45 +249,11 @@ public class DisplayUnityObj : DisplayMolecule {
 
 		for (int i=0; i<mol.Atoms.Count; i++){
 
-			mol.Atoms [i].Gameobject.transform.localPosition  = mol.Atoms[i].Location;
+			mol.Atoms [i].Gameobject[Main.current_frame].transform.localPosition  = mol.Atoms[i].Location[Main.current_frame];
 		}
 
 	}
 
 
-
-
-
-	public override void DisplayHetAtm(bool showHetAtoms){
-
-		for (int i =0; i < mol.Chains.Count; i++) {
-
-			if (mol.Chains [i].Type == "HETATM") {
-
-				mol.Chains [i].Gameobject.SetActive (showHetAtoms);
-
-			}
-		}
-	}
-	
-	
-	public override void DisplayWater(bool showWater){
-
-		for (int i =0; i < mol.Chains.Count; i++) {
-
-			if(mol.Chains [i].Type == "HETATM"){
-
-				for (int j =0; j < mol.Chains[i].Residues.Count; j++) {
-					
-					if((mol.Chains[i].Residues[j].ResName == "HOH")||(mol.Chains[i].Residues[j].ResName == "SOL")){
-						mol.Chains[i].Residues[j].Gameobject.SetActive(showWater);
-						
-					}	
-				}
-			}
-		}
-		
-		
-	}
 
 }

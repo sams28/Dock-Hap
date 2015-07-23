@@ -35,7 +35,6 @@ static public class MarchingCubes
 		Color[] col = new Color[8];
 
 		//Pas de for car on doit verifier que l'on depasse pas 65000 Vertices
-		Debug.Log (voxels.GetLength (0) + " " + voxels.GetLength (1) + " " + voxels.GetLength (2));
 		int x = start;
 		int y = start;
 		int z = start;
