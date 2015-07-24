@@ -114,7 +114,7 @@ public class MainUI : MonoBehaviour {
 
 		menu.SetActive (false);
 		//start.transform.FindChild ("LoadFile").GetComponent<InputField> ().text = Application.dataPath+"/Resources/dyna1.gro";
-		start.transform.FindChild ("LoadFile").GetComponent<InputField> ().text = "/Users/Samba/Documents/molecules/imd_ini.pdb";
+		start.transform.FindChild ("LoadFile").GetComponent<InputField> ().text = "/Users/Samba/Documents/molecules/imdgroup.gro";
 		//start.transform.FindChild ("LoadFile").GetComponent<InputField> ().text = Application.dataPath+"/Resources/1BRS.pdb";
 	
 	}

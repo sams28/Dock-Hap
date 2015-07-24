@@ -21,7 +21,7 @@ public class Main : MonoBehaviour {
 	public List<Molecule> molecules;
 	public Material mainMaterial;
 	public const int MAX_NUM_DEVICES =10;
-	public const int MAX_FRAMES =10000;
+	public const int MAX_FRAMES =100;
 	static public int current_frame =0;
 	static public int total_frames =1;
 	public int start_frame =0;
@@ -40,9 +40,11 @@ public class Main : MonoBehaviour {
 	
 		molecules = new List<Molecule> ();
 		sr =new StreamReader(resource_name);
+
 		LoadFile (sr);
 		sr.Close ();
 
+		ReadFiles.ReadXTC("C:\\Users\\Samba\\Documents\\molecules\\traj_comp.xtc",molecules[0]);
 	
 
 		molecules[0].CalculateCenters();
@@ -352,9 +354,21 @@ public class Main : MonoBehaviour {
 			}
 			break;
 		case ColorDisplay.ChainID:
+
+			List<Chain> ch = new List<Chain>();
 			for (int i=0; i<molecules [current_mol].Chains.Count; i++) {
-				
-				molecules [current_mol].Chains[i].ObjColor = new Color(UnityEngine.Random.Range(0.1f,1f),UnityEngine.Random.Range(0.1f,1f),UnityEngine.Random.Range(0.1f,1f));
+				Chain c = ch.Find(x => x.ChainID == molecules [current_mol].Chains[i].ChainID);
+				if(c != null){
+					
+					molecules [current_mol].Chains[i].ObjColor = c.ObjColor;
+					
+				}
+				else{
+
+					molecules [current_mol].Chains[i].ObjColor = new Color(UnityEngine.Random.Range(0.1f,1f),UnityEngine.Random.Range(0.1f,1f),UnityEngine.Random.Range(0.1f,1f));
+					ch.Add(molecules [current_mol].Chains[i]);
+				}
+
 				
 			}
 			break;

@@ -157,12 +157,11 @@ namespace MoleculeData{
 		private int number;
 
 
-		public Atom(Vector3 l,string name,float charge,int num,Residue r,Chain c) :base(){
+		public Atom(string name,float charge,int num,Residue r,Chain c) :base(){
 
 
 
 			number = num;
-			location[0] = l;
 			atomFullName = name;
 			atomName = name [0].ToString();
 			atomCharge = charge;

@@ -5,12 +5,24 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using MoleculeData;
 
 namespace LoadData{
 
 	public class ReadFiles{
 	
+
+		
+		[DllImport ("grofileplugin")]
+		private static extern int open_file(string filename,string type);
+		[DllImport ("grofileplugin")]
+		private static extern int read_traj([In, Out] float[] trajectories);
+		[DllImport ("grofileplugin")]
+		private static extern void close_file();
+
+
+
 	
 		static private int nowline;
 		static private int nowchain;
@@ -33,53 +45,86 @@ namespace LoadData{
 		public static Molecule ReadPDB(TextReader sr){
 
 			Molecule mol = new Molecule ();
+			bool mul_pos =false;
 			Chain c = new Chain();
 			Residue r = new Residue();
 			lastresID =-1;
 			lastchainID = "NONE";
-			nowline = 0;
 			nowresidue = -1;
 			nowchain = -1;
 			nbatom = 0;
 			
 			while((s=sr.ReadLine())!=null) {
-				if(s.StartsWith("ENDMDL"))
+
+
+
+				if(s.StartsWith("ENDMDL") && !mul_pos){
 					break;
+				}
+
+
+
+				if(s.StartsWith("MODEL")){
+
+					mul_pos =true;
+					nbatom =0;
+					int frame = int.Parse(s.Substring(10,4));
+
+					if(frame > 1)
+					{
+						Main.total_frames++;
+					}
+
+				}
+
+
+
+					
 				
 				if(s.Length>4) {
-					if(s.StartsWith("ATOM")) {
 
 
-						chainID = s.Substring(21,1).Trim();
+					if(s.StartsWith("ATOM") || s.StartsWith("HETATM")) {
+
+						if(Main.total_frames < 2){
+							chainID = s.Substring(21,1).Trim();
 
 
-						if(String.Compare(lastchainID,chainID) !=0){
+							if(String.Compare(lastchainID,chainID) !=0){
 
-							c=new Chain("ATOM",chainID);
-							mol.Chains.Add(c);
-							nowchain++;
-							nowresidue =-1;
+								if(s.StartsWith("ATOM"))
+									c=new Chain("ATOM",chainID);
+								else
+									c=new Chain("HETATM",chainID);
+								mol.Chains.Add(c);
+								nowchain++;
+								nowresidue =-1;
 
-							lastchainID = chainID;
-							
+								lastchainID = chainID;
+								
+							}
+
+							resID = int.Parse(s.Substring(22,4));
+
+							if((lastresID != resID)){
+								resname=s.Substring(17,3).Trim();
+								r = new Residue(resname,resID,c);
+								mol.Chains[nowchain].Residues.Add(r);
+								mol.Residues.Add(r);
+								nowresidue++;
+								lastresID = resID;
+								
+							}
+
+
+							atomname=s.Substring(12,4).Trim();
+							Atom at = new Atom(atomname,0.0f,nbatom,r,c);
+							mol.Chains[nowchain].Residues[nowresidue].Atoms.Add(at);
+							mol.Chains[nowchain].Atoms.Add(at);
+							mol.Atoms.Add(at);
+
+
 						}
-
-						resID = int.Parse(s.Substring(22,4));
-
-						if((lastresID != resID)){
-							resname=s.Substring(17,3).Trim();
-							r = new Residue(resname,resID,c);
-							mol.Chains[nowchain].Residues.Add(r);
-							mol.Residues.Add(r);
-							nowresidue++;
-							lastresID = resID;
-							
-						}
-
-
-
-						
-						atomname=s.Substring(12,4).Trim();
 
 						//Unity has a left-handed coordinates system while PDBs are right-handed
 						//So we have to reverse the X coordinates
@@ -87,70 +132,15 @@ namespace LoadData{
 						y=float.Parse(s.Substring(38,8));
 						z=float.Parse(s.Substring(46,8));
 						vect = new Vector3(x,y,z);
-						Atom at = new Atom(vect,atomname,0.0f,nbatom,r,c);
-						mol.Chains[nowchain].Residues[nowresidue].Atoms.Add(at);
-						mol.Chains[nowchain].Atoms.Add(at);
-						mol.Atoms.Add(at);
-						nbatom++;
+						mol.Atoms[nbatom].Location[Main.total_frames-1] = vect;
 					
-						
-						
-					}
-					
-					if(s.StartsWith("HETATM")) {
-							
-							
-
-						
-						chainID = s.Substring(21,1).Trim();
-						
-						
-						if(String.Compare(lastchainID,chainID) !=0){
-							
-							c=new Chain("HETATM",chainID);
-							mol.Chains.Add(c);
-							nowchain++;
-							nowresidue =-1;
-							
-							lastchainID = chainID;
-							
-						}
-						
-						resID = int.Parse(s.Substring(22,4));
-						
-						if((lastresID != resID)){
-							resname=s.Substring(17,3).Trim();
-							r = new Residue(resname,resID,c);
-							mol.Chains[nowchain].Residues.Add(r);
-							mol.Residues.Add(r);
-							nowresidue++;
-							lastresID = resID;
-							
-						}
-						
-						
-						
-						
-						atomname=s.Substring(12,4).Trim();
-						
-						//Unity has a left-handed coordinates system while PDBs are right-handed
-						//So we have to reverse the X coordinates
-						x=-float.Parse(s.Substring(30,8));
-						y=float.Parse(s.Substring(38,8));
-						z=float.Parse(s.Substring(46,8));
-						vect = new Vector3(x,y,z);
-						Atom at = new Atom(vect,atomname,0.0f,nbatom,r,c);
-						mol.Chains[nowchain].Residues[nowresidue].Atoms.Add(at);
-						mol.Chains[nowchain].Atoms.Add(at);
-						mol.Atoms.Add(at);
 						nbatom++;
-
-						
 						
 					}
 
-					nowline++;
+
 				}
+
 			}
 			
 			sr.Close ();
@@ -221,6 +211,21 @@ namespace LoadData{
 					
 					atomname = s.Substring(10,5).Trim ();
 					
+
+					if(resname != "SOL" &&resname != "DLC" ){
+					Atom at =new Atom(atomname,0.0f,nbatom,r,mol.Chains[0]); 
+						mol.Chains[nowchain].Residues[nowresidue].Atoms.Add(at);
+						mol.Chains[nowchain].Atoms.Add(at);
+						mol.Atoms.Add(at);
+					}
+					else{
+						Atom at =new Atom(atomname,0.0f,nbatom,r,mol.Chains[1]); 
+						mol.Chains[nowchain].Residues[nowresidue].Atoms.Add(at);
+						mol.Chains[nowchain].Atoms.Add(at);
+						mol.Atoms.Add(at);
+					}
+
+
 					//Unity has a left-handed coordinates system while PDBs are right-handed
 					//So we have to reverse the X coordinates
 					x = -float.Parse (s.Substring(20,8));
@@ -232,19 +237,9 @@ namespace LoadData{
 					z*=10;
 					vect = new Vector3(x,y,z);
 
-					if(resname != "SOL" &&resname != "DLC" ){
-						Atom at =new Atom(vect,atomname,0.0f,nbatom,r,mol.Chains[0]); 
-						mol.Chains[nowchain].Residues[nowresidue].Atoms.Add(at);
-						mol.Chains[nowchain].Atoms.Add(at);
-						mol.Atoms.Add(at);
-					}
-					else{
-						Atom at =new Atom(vect,atomname,0.0f,nbatom,r,mol.Chains[1]); 
-						mol.Chains[nowchain].Residues[nowresidue].Atoms.Add(at);
-						mol.Chains[nowchain].Atoms.Add(at);
-						mol.Atoms.Add(at);
-					}
-						
+
+					mol.Atoms[nbatom].Location[0] = vect;
+
 					nbatom++;
 
 					
@@ -254,10 +249,6 @@ namespace LoadData{
 					
 				}
 
-
-
-				nowline++;
-
 			}
 
 
@@ -266,15 +257,29 @@ namespace LoadData{
 			return mol;
 
 
-
-
+		
 		}
 
+		public static void ReadXTC(string file,Molecule m){
+
+			float[] trajec = new float[m.Atoms.Count*3];
+			if (open_file (file, "xtc") == 1) {
+				while(read_traj(trajec)==1){
+
+					for(int i=0;i<m.Atoms.Count;i++){
+						m.Atoms[i].Location[Main.total_frames] =new Vector3(-trajec[i*3],trajec[i*3+1],trajec[i*3+2]);
+
+					}
 
 
+					Main.total_frames++;
 
+				}
+				close_file ();
 
+			}
 
+		}
 
 		/*
 
