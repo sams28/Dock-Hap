@@ -24,6 +24,8 @@ public class Select{
 	private float lastPressedTime;
 	private bool listen2;
 	private float lastPressedTime2;
+	ParticleSystem.Particle[] p = new ParticleSystem.Particle[100000];
+
 
 	public Select(){
 
@@ -74,9 +76,12 @@ public class Select{
 
 	public void SetClosestElements(Molecule m,GameObject d){
 		
+
+
 		
 		minDistChain = m.Chains [0];
 		minDistResidue = m.Chains [0].Residues [0];
+
 		minDistAtom = m.Chains [0].Residues [0].Atoms [0];
 		float minDist = Vector3.Distance(minDistAtom.Location[Main.current_frame],d.transform.position);
 		float dist;
@@ -95,16 +100,21 @@ public class Select{
 		}
 
 */
-		
-		
+
+
 		for (int i =0; i < m.Chains.Count; i++) {
-			
+
+			if(m.Chains[i].Active){
+		
 			for (int j =0; j < m.Chains[i].Residues.Count; j++) {
-				
+
+					if(m.Chains[i].Residues[j].Active){
+
 				for (int k =0; k < m.Chains[i].Residues[j].Atoms.Count; k++) {
-					
-					
+
+					if(m.Chains[i].Residues[j].Atoms[k].Active){
 					dist =  Vector3.Distance(m.Chains[i].Residues[j].Atoms[k].Location[Main.current_frame],d.transform.position);
+
 					if(dist < minDist){
 						minDist = dist;
 						minDistAtom = m.Chains[i].Residues[j].Atoms[k];
@@ -112,21 +122,22 @@ public class Select{
 						minDistChain = m.Chains[i];
 						
 						
-					}
-					
+								}
+
+							}
+						}
+					}	
 				}
 			}
 		}
 
-		
+
+
 	}
-
-
 
 	public void SetParticles(Molecule m,Color32 c){
 
 
-		ParticleSystem.Particle[] p = new ParticleSystem.Particle[100000];
 		int index = 0;
 		for(int i=0;i<selectedAtoms.Count;i++){
 			p[index].size = 1.0f;
@@ -219,7 +230,7 @@ public class SelectAtoms : MonoBehaviour {
 	private List<Select> selects;
 	private VRPN vrpn;
 	private IMD imd;
-
+	private float timer =0f;
 
 	public List<Select> Selects{
 		get{return selects;}
@@ -263,10 +274,15 @@ public class SelectAtoms : MonoBehaviour {
 
 	public void ClosestAtom(Molecule m,List<Device> d){
 		Color32 c;
-
 		for (int i =0; i<selects.Count; i++) {
 
-			selects[i].SetClosestElements(m,d[i].obj);
+
+			
+		
+				selects[i].SetClosestElements(m,d[i].obj);
+
+
+
 			selects[i].SetParticles(m,d[i].c);
 
 		}
@@ -438,7 +454,7 @@ public class SelectAtoms : MonoBehaviour {
 					float timeDiff = Time.realtimeSinceStartup - selects[i].LastPressedTime;
 
 					if (timeDiff < 1.0f) {
-						SetSelect (GetComponent<Main>().molecules [0].select,i);
+						SetSelect (GetComponent<Main>().molecules [1].select,i);
 
 					
 					}

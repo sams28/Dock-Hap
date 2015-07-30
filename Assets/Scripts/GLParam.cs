@@ -12,7 +12,7 @@ public class GLParam : MonoBehaviour
 	const UInt32 GL_VERTEX_PROGRAM_POINT_SIZE = 0x8642;
 	const UInt32 GL_POINT_SMOOTH = 0x0B10;
 	const UInt32 GL_LINE_SMOOTH = 0x0B20;
-
+	const UInt32 GL_SMOOTH = 0x1D01;
 
 
 	const string LibGLPath =
@@ -21,7 +21,7 @@ public class GLParam : MonoBehaviour
 	#elif UNITY_STANDALONE_OSX
 	"/System/Library/Frameworks/OpenGL.framework/OpenGL";
 	#elif UNITY_STANDALONE_LINUX
-	"/usr/lib/libGL.so";  // Untested on Linux, this may not be correct
+	"/usr/lib/x86_64-linux-gnu/libGL.so";  
 	#else
 	null;   // OpenGL ES platforms don't require this feature
 	#endif
@@ -31,10 +31,10 @@ public class GLParam : MonoBehaviour
 	public static extern void glEnable(UInt32 cap);
 	[DllImport(LibGLPath)]
 	public static extern void glLineWidth(float f);
+	[DllImport(LibGLPath)]
+	public static extern void glPointSize(float f);
 
-	
 	private bool mIsOpenGL;
-	public float width =1.0f;
 
 	void Start()
 	{
@@ -47,7 +47,8 @@ public class GLParam : MonoBehaviour
 			glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 		glEnable(GL_POINT_SMOOTH);
 		//obligatory to control the line width (no geometry shader)
-		glLineWidth (width);
+		glLineWidth (Main.globalScale);
+		glPointSize (Main.globalScale);
 		glEnable(GL_LINE_SMOOTH);
 		//GL.wireframe = true;
 	}

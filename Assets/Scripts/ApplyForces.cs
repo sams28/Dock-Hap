@@ -48,7 +48,7 @@ public class ApplyForces : MonoBehaviour {
 
 
 	// Magnetic force
-	public void setForceForAtomPosition(Molecule m)
+	public void setForceForAtomPosition()
 	{
 		if (!vrpn.ServerStarted) return;
 
@@ -130,7 +130,7 @@ public class ApplyForces : MonoBehaviour {
 
 			List<Atom> l = new List<Atom> ();
 
-			switch (GetComponent<Main> ().molecules [0].select) {
+			switch (GetComponent<Main> ().molecules [1].select) {
 			case SelectDisplay.Atom :
 					l= s.Selects[z].selectedAtoms;
 				
@@ -207,7 +207,7 @@ public class ApplyForces : MonoBehaviour {
 							}
 
 
-							switch (GetComponent<Main> ().molecules [0].select) {
+							switch (GetComponent<Main> ().molecules [1].select) {
 							case SelectDisplay.Atom :
 
 								for(int i = 0; i <s.Selects[z].selectedAtoms.Count;i++){
@@ -273,7 +273,7 @@ public class ApplyForces : MonoBehaviour {
 							
 						}
 
-						switch (GetComponent<Main> ().molecules [0].select) {
+						switch (GetComponent<Main> ().molecules [1].select) {
 						case SelectDisplay.Atom :
 							
 							for(int i = 0; i <s.Selects[z].selectedAtoms.Count;i++){

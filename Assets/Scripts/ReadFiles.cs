@@ -128,9 +128,9 @@ namespace LoadData{
 
 						//Unity has a left-handed coordinates system while PDBs are right-handed
 						//So we have to reverse the X coordinates
-						x=-float.Parse(s.Substring(30,8));
-						y=float.Parse(s.Substring(38,8));
-						z=float.Parse(s.Substring(46,8));
+						x=-float.Parse(s.Substring(30,8),System.Globalization.CultureInfo.InvariantCulture);
+						y=float.Parse(s.Substring(38,8),System.Globalization.CultureInfo.InvariantCulture);
+						z=float.Parse(s.Substring(46,8),System.Globalization.CultureInfo.InvariantCulture);
 						vect = new Vector3(x,y,z);
 						mol.Atoms[nbatom].Location[Main.total_frames-1] = vect;
 					
@@ -179,7 +179,7 @@ namespace LoadData{
 					if((lastresID != resID)){
 						resname = s.Substring(5,5).Trim();
 
-						if(resname != "SOL" &&resname != "DLC"){
+						if(resname != "SOL" &&resname != "DLC" &&resname != "WAT"){
 							r =new Residue(resname,resID,mol.Chains[0]);
 							/*everything after dlc is a hetatm
 							if(nowchain != 0){
@@ -212,7 +212,7 @@ namespace LoadData{
 					atomname = s.Substring(10,5).Trim ();
 					
 
-					if(resname != "SOL" &&resname != "DLC" ){
+					if(resname != "SOL" &&resname != "DLC" &&resname != "WAT" ){
 					Atom at =new Atom(atomname,0.0f,nbatom,r,mol.Chains[0]); 
 						mol.Chains[nowchain].Residues[nowresidue].Atoms.Add(at);
 						mol.Chains[nowchain].Atoms.Add(at);
@@ -228,9 +228,9 @@ namespace LoadData{
 
 					//Unity has a left-handed coordinates system while PDBs are right-handed
 					//So we have to reverse the X coordinates
-					x = -float.Parse (s.Substring(20,8));
-					y = float.Parse (s.Substring(28,8));
-					z = float.Parse (s.Substring(36,8));
+					x = -float.Parse (s.Substring(20,8),System.Globalization.CultureInfo.InvariantCulture);
+					y = float.Parse (s.Substring(28,8),System.Globalization.CultureInfo.InvariantCulture);
+					z = float.Parse (s.Substring(36,8),System.Globalization.CultureInfo.InvariantCulture);
 					//convert nanometers to Angstorms
 					x*=10;
 					y*=10;

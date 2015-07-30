@@ -448,6 +448,7 @@ public class VRPN : MonoBehaviour {
 
 	public void Init(){
 
+		VRPNServerStart ("", devices[0].Server);
 		for (int i=0; i<devices.Count; i++) {
 			 
 			devices[i].obj = (GameObject)Instantiate (Resources.Load("Prefabs/Picker") as GameObject, new Vector3(0,0,10), Quaternion.identity);
@@ -458,24 +459,16 @@ public class VRPN : MonoBehaviour {
 			VRPNTrackerStart (devices[i].Name, 1, devices[i].MaxNumberOfReports);
 			VRPNButtonStart(devices[i].Name, devices[i].MaxNumberOfReports);
 			VRPNForceFeedbackInit(devices[i].Name);
-			serverStarted = true;
-
-		}
 
 
-
-
-		VRPNServerStart ("", devices[0].Server);
-		for (int i=0; i<devices.Count; i++) {
-
-			
-			VRPNTrackerStart (devices[i].Name, 1, devices[i].MaxNumberOfReports);
-			VRPNButtonStart(devices[i].Name, devices[i].MaxNumberOfReports);
-			VRPNForceFeedbackInit(devices[i].Name);
-
-			
 		}
 		serverStarted = true;
+
+
+
+
+
+
 		
 	}
 	

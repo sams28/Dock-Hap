@@ -117,8 +117,8 @@ static public class MarchingCubes
 		for (int i = 0; i < 8; i++) {
 			cube [i] = voxels [x + vertexOffset [i, 0], y + vertexOffset [i, 1], z + vertexOffset [i, 2]];
 
-			//col[i]=colors[x + vertexOffset [i, 0], y + vertexOffset [i, 1], z + vertexOffset [i, 2]];
-			col[i] = colors[x + vertexOffset [7, 0], y + vertexOffset [7, 1], z + vertexOffset [7, 2]];
+			col[i]=colors[x + vertexOffset [i, 0], y + vertexOffset [i, 1], z + vertexOffset [i, 2]];
+			//col[i] = colors[x + vertexOffset [7, 0], y + vertexOffset [7, 1], z + vertexOffset [7, 2]];
 		}
 			
 	}
@@ -161,12 +161,15 @@ static public class MarchingCubes
                 edgeVertex[i].x = pos.x + (vertexOffset[edgeConnection[i,0],0] + offset * edgeDirection[i,0]);
                 edgeVertex[i].y = pos.y + (vertexOffset[edgeConnection[i,0],1] + offset * edgeDirection[i,1]);
                 edgeVertex[i].z = pos.z + (vertexOffset[edgeConnection[i,0],2] + offset * edgeDirection[i,2]);
-				colVertex[i] = col[edgeConnection[i,0]];
-
+				//colVertex[i] = col[edgeConnection[i,0]];
+				colVertex[i] = Color.Lerp(col[edgeConnection[i,0]],col[edgeConnection[i,1]],0.5f);
 
 	        }
 	    }
 	
+	
+
+
 	    //Save the triangles that were found. There can be up to five per cube
 	    for(i = 0; i < 5; i++)
 	    {

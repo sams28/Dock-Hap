@@ -11,20 +11,17 @@
          GLSLPROGRAM
          
          
- 		 #extension GL_EXT_gpu_shader4 : require
+
 		 varying vec4 xlv_COLOR;
          
          
          #ifdef VERTEX
-         uniform float _PointSize;
+
          
          void main()
          {				
             
             xlv_COLOR = gl_Color;
-            gl_PointSize = _PointSize;
-            
-
             gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
          }
          

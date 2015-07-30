@@ -1,4 +1,4 @@
-﻿Shader "Custom/rib" {
+﻿Shader "Custom/SurfaceShader" {
 
 
 	SubShader {
@@ -11,7 +11,7 @@
 			#pragma fragment frag
 			#pragma debug
 			
-			struct appdata {
+			struct input {
 				float4 position : POSITION;
 				float4 color : COLOR;
 				float3 normal : NORMAL;
@@ -24,11 +24,11 @@
 				float3 normal : TEXCOORD0;
 			};
 	 
-			v2f vert (appdata i) {
+			v2f vert (input i) {
 				v2f o;
+
 				o.position = mul (UNITY_MATRIX_MVP, i.position);
 				o.color = i.color;
-				//o.normal = i.normal;
 				o.normal = mul( ((float3x3)UNITY_MATRIX_MVP), i.normal);
 				return o;
 			}

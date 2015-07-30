@@ -40,11 +40,12 @@ public abstract class DisplayMolecule : MonoBehaviour {
 	
 	
 	
-	public void Init(Molecule mo,Material ma){
+	public void Init(Molecule mo,Material ma,float s){
 
 		mol = mo;
 		mat= ma;
 		GradientCharges ();
+		scale =s;
 
 	}
 

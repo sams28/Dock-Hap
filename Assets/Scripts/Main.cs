@@ -17,9 +17,12 @@ public class Main : MonoBehaviour {
 
 
 	//File path
-	public string resource_name;
+	public MainUI ui;
+	public string molecule_file;
+	public string trajectory_file;
 	public List<Molecule> molecules;
 	public Material mainMaterial;
+	static public float globalScale = 1.0f;
 	public const int MAX_NUM_DEVICES =10;
 	public const int MAX_FRAMES =100;
 	static public int current_frame =0;
@@ -39,12 +42,11 @@ public class Main : MonoBehaviour {
 	public void Init() {
 	
 		molecules = new List<Molecule> ();
-		sr =new StreamReader(resource_name);
 
-		LoadFile (sr);
-		sr.Close ();
 
-		ReadFiles.ReadXTC("C:\\Users\\Samba\\Documents\\molecules\\traj_comp.xtc",molecules[0]);
+		LoadFile (molecule_file);
+		LoadFile (trajectory_file);
+
 	
 
 		molecules[0].CalculateCenters();
@@ -52,7 +54,7 @@ public class Main : MonoBehaviour {
 		molecules[0].CalculateBonds();
 		SetMolecule ("all",true);
 
-		GetComponent<MouseControl>().center = molecules[0].Location[0];
+		ui.center = molecules[0].Location[0];
 		Camera.main.transform.localPosition = new Vector3 (molecules[0].Location[0].x, molecules[0].Location[0].y, /*target.z*/ - (Vector3.Distance (molecules[0].MaxValue, molecules[0].MinValue)));
 		SetColors (1);
 
@@ -68,8 +70,8 @@ public class Main : MonoBehaviour {
 
 		if (GetComponent<VRPN> ().ServerStarted) {
 
-			GetComponent<SelectAtoms> ().ClosestAtom(molecules[0],GetComponent<VRPN> ().Devices);
-			GetComponent<ApplyForces> ().setForceForAtomPosition (molecules[0]);
+			GetComponent<SelectAtoms> ().ClosestAtom(molecules[1],GetComponent<VRPN> ().Devices);
+			GetComponent<ApplyForces> ().setForceForAtomPosition ();
 
 				if(GetComponent<IMD>().IsIMDRunning())
 				{
@@ -199,13 +201,14 @@ public class Main : MonoBehaviour {
 			case "water":
 
 
-				
+
 				for (int i=0; i< mol.Chains.Count; i++) {
 
 					for (int j=0; j< mol.Chains[i].Residues.Count; j++) {
 
-						if ((mol.Chains [i].Type == "HETATM" && ((mol.Chains[i].Residues[j].ResName =="SOL") || (mol.Chains[i].Residues[j].ResName == "HOH"))) ^not) {
+						if ((mol.Chains [i].Type == "HETATM" && ((mol.Chains[i].Residues[j].ResName =="WAT") || (mol.Chains[i].Residues[j].ResName =="SOL") || (mol.Chains[i].Residues[j].ResName == "HOH"))) ^not) {
 
+							mol.Chains[i].SetActive (true);
 							mol.Chains[i].Residues[j].SetActive (true);
 
 							}
@@ -287,7 +290,7 @@ public class Main : MonoBehaviour {
 				break;
 			}
 
-			molecules [current_mol].Gameobject[i].GetComponent<DisplayMolecule> ().Init (molecules [current_mol], mainMaterial);
+			molecules [current_mol].Gameobject[i].GetComponent<DisplayMolecule> ().Init (molecules [current_mol], mainMaterial,globalScale);
 			molecules [current_mol].Gameobject[i].GetComponent<DisplayMolecule> ().DisplayMol (molecules [current_mol].color, molecules [current_mol].type, i);
 
 			//molecules [i].molecule.GetComponent<DisplayMolecule>().SetColors(ColorDisplay.Name);
@@ -462,17 +465,40 @@ public class Main : MonoBehaviour {
 
 
 
-	public void LoadFile(TextReader sr){
+	public void LoadFile(string s){
+
+		if (s != "") {
+
+			string[] sl = s.Split (new Char[] {'.'}, StringSplitOptions.RemoveEmptyEntries);
+			StreamReader sr;
+			switch (sl [sl.Length - 1]) {
+			case "pdb": 
+				sr = new StreamReader (s);
+				molecules.Add (ReadFiles.ReadPDB (sr));
+				sr.Close ();
+				break;
+			case "gro": 
+				sr = new StreamReader (s);
+				molecules.Add (ReadFiles.ReadGRO (sr));
+				sr.Close ();
+				break;
+			case "mol2": 
+				sr = new StreamReader (s);
+			//molecules.Add(ReadFiles.ReadMOL2 (sr));
+				sr.Close ();
+				break;
+			case "xtc": 
+				ReadFiles.ReadXTC (s, molecules [0]);
+				break;
+			default:
+				Debug.LogError ("File not supported");
+				break;
 
 
-		if (resource_name.EndsWith ("mol2")) {
-			//molecule = ReadFiles.ReadMOL2 (sr);
-		} else if (resource_name.EndsWith ("pdb")) {
-			molecules.Add(ReadFiles.ReadPDB (sr));
-		} else if (resource_name.EndsWith ("gro")) {
-			molecules.Add(ReadFiles.ReadGRO (sr));
+
+			}
+	
 		}
-
 
 	}
 

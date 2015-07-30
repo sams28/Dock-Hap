@@ -5,9 +5,15 @@ using MoleculeData;
 
 public class DisplayUnityObj : DisplayMolecule {
 
-
 	private List<GameObject> bonds;
-
+	private GameObject[] m_mesh;
+	public List<Mesh> meshes;
+	//Max size of the mesh (must be a multiple of 2,3,4)
+	private const int MAX_SIZE_MESH = 64500; 
+	
+	Vector3[] points;
+	int[] indices;
+	Color[] colors;
 	// Use this for initialization
 	void Start () {
 	
@@ -24,9 +30,9 @@ public class DisplayUnityObj : DisplayMolecule {
 		color = c;
 		frame = f;
 		switch (t) {
-		case TypeDisplay.Points :  DisplayMolSpheres();break;
+		case TypeDisplay.Points :  DisplayMolSpheresBatch();break;
 		case TypeDisplay.VDW :  DisplayMolSpheres();break;
-		case TypeDisplay.Lines :  DisplayMolCylinders();break;
+		case TypeDisplay.Lines :  DisplayMolCylindersBatch();break;
 		case TypeDisplay.CPK : DisplayMolSpheres();DisplayMolCylinders();break;
 		case TypeDisplay.Trace :DisplayMolTubes();break;
 		default: DisplayMolSpheres();break;
@@ -78,7 +84,8 @@ public class DisplayUnityObj : DisplayMolecule {
 	
 	public void DisplayMolSpheres() 
 	{
-		scale = 0.5f;
+
+	
 		
 		for (int i =0; i < mol.Chains.Count; i++) {
 
@@ -90,9 +97,9 @@ public class DisplayUnityObj : DisplayMolecule {
 				mol.Chains[i].Residues[j].Gameobject[frame].transform.SetParent(mol.Chains[i].Gameobject[frame].transform,true);
 				for(int k =0; k < mol.Chains[i].Residues[j].Atoms.Count; k++) {
 					switch(type){
-					case TypeDisplay.VDW : displayAtom(mol.Chains[i].Residues[j].Atoms[k],2f*scale*mol.Chains[i].Residues[j].Atoms[k].AtomRadius);break;
-					case TypeDisplay.CPK : displayAtom(mol.Chains[i].Residues[j].Atoms[k],0.5f*scale*mol.Chains[i].Residues[j].Atoms[k].AtomRadius);break;
-					default : displayAtom(mol.Chains[i].Residues[j].Atoms[k],scale);break;
+					case TypeDisplay.VDW : displayAtom(mol.Chains[i].Residues[j].Atoms[k],scale*mol.Chains[i].Residues[j].Atoms[k].AtomRadius);break;
+					case TypeDisplay.CPK : displayAtom(mol.Chains[i].Residues[j].Atoms[k],0.25f*scale*mol.Chains[i].Residues[j].Atoms[k].AtomRadius);break;
+					default : displayAtom(mol.Chains[i].Residues[j].Atoms[k],scale * 0.5f);break;
 					}
 
 					mol.Chains[i].Residues[j].Atoms[k].Gameobject[frame].transform.SetParent(mol.Chains[i].Residues[j].Gameobject[frame].transform,true);
@@ -106,8 +113,174 @@ public class DisplayUnityObj : DisplayMolecule {
 	}
 
 
+	public void DisplayMolSpheresBatch(){
+		
+		int i = 0;
+		int index;
+		GameObject standard_gameobject = (GameObject)Instantiate (Resources.Load("Prefabs/Atom") as GameObject,Vector3.zero, Quaternion.identity);;
+		Mesh m = standard_gameobject.GetComponent<MeshFilter> ().mesh;
+		
+		
+		
+		meshes = new List<Mesh> ();
+		while (i < mol.Atoms.Count) {
+			
+			
+			Mesh mesh = new Mesh ();
+			mesh.MarkDynamic ();
+			GameObject g = (GameObject)Instantiate (Resources.Load("Prefabs/SubBatch") as GameObject, Vector3.zero, Quaternion.identity);
+			g.transform.SetParent(this.transform,false);
+			g.GetComponent<MeshFilter> ().mesh = mesh;
+			
+			CombineInstance[] combine;
+			
+			if((mol.Atoms.Count-i)*m.vertexCount < MAX_SIZE_MESH)
+			{
+
+				combine = new CombineInstance[mol.Atoms.Count-i];
+				colors = new Color[(mol.Atoms.Count-i)*m.vertexCount];
+				
+			}
+			else{
+				combine = new CombineInstance[MAX_SIZE_MESH/m.vertexCount];
+				colors = new Color[m.vertexCount*combine.Length];
+			}
+			index =0;
+			
+			while (i < mol.Atoms.Count && index < combine.Length) {
+				
+				if(mol.Atoms[i].Active){
+				standard_gameobject.transform.localPosition =mol.Atoms [i].Location[frame];
+				standard_gameobject.transform.localScale = new Vector3(scale,scale,scale);
+				
+				
+				
+				
+				for(int j=0;j<m.vertexCount;j++)
+					colors[index*m.vertexCount+j] = setColorAtm (mol.Atoms [i], color);
+				
+				
+				combine[index].mesh = m;
+				combine[index].transform = standard_gameobject.GetComponent<MeshFilter>().transform.localToWorldMatrix;
+					index++;
+
+				}
+				i++;
+				
+			}
+			
+			mesh.CombineMeshes(combine);
+			//CombineMeshes does not combine colors, we have to set them manually
+			
+			mesh.colors = colors;
+			mesh.RecalculateBounds();
+			meshes.Add (mesh);
+			
+			
+		}
+		Destroy (standard_gameobject);
+		
+	}
+
+
+	public void DisplayMolCylindersBatch(){
+		
+		int i = 0;
+		int index;
+		GameObject b1 = (GameObject)Instantiate (Resources.Load("Prefabs/Bond") as GameObject,Vector3.zero, Quaternion.identity);
+		GameObject b2 = (GameObject)Instantiate (Resources.Load("Prefabs/Bond") as GameObject,Vector3.zero, Quaternion.identity);
+		Mesh m1 = b1.GetComponentInChildren<MeshFilter> ().mesh;
+		Mesh m2 = b1.GetComponentInChildren<MeshFilter> ().mesh;
+		
+		
+		meshes = new List<Mesh> ();
+		while (i < mol.Bonds.Count) {
+			
+			
+			Mesh mesh = new Mesh ();
+			mesh.MarkDynamic ();
+			GameObject g = (GameObject)Instantiate (Resources.Load("Prefabs/SubBatch") as GameObject, Vector3.zero, Quaternion.identity);
+			g.transform.SetParent(this.transform,false);
+			g.GetComponent<MeshFilter> ().mesh = mesh;
+			
+			CombineInstance[] combine;
+			
+			if((mol.Bonds.Count-i)*m1.vertexCount < MAX_SIZE_MESH)
+			{
+				
+				combine = new CombineInstance[mol.Bonds.Count-i];
+				colors = new Color[(mol.Bonds.Count-i)*m1.vertexCount];
+				
+			}
+			else{
+				combine = new CombineInstance[MAX_SIZE_MESH/m1.vertexCount];
+				colors = new Color[m1.vertexCount*combine.Length];
+			}
+			index =0;
+			
+			while (i < mol.Bonds.Count && index*2+1 < combine.Length) {
+				
+				if(mol.Atoms [mol.Bonds [i] [0]].Active && mol.Atoms [mol.Bonds [i] [1]].Active){
+
+					b1.transform.SetParent(transform,true);
+					b2.transform.SetParent(transform,true);
+					b1.transform.LookAt(mol.Atoms [mol.Bonds [i] [1]].Location[frame]);
+					b2.transform.LookAt(mol.Atoms [mol.Bonds [i] [0]].Location[frame]);
+					float d = Vector3.Distance(mol.Atoms [mol.Bonds [i] [0]].Location[frame],mol.Atoms [mol.Bonds [i] [1]].Location[frame])/4;
+					switch(type){
+					case TypeDisplay.CPK : 
+						b1.transform.localScale = new Vector3(scale/16,scale/16,d);
+						b2.transform.localScale = new Vector3(scale/16,scale/16,d);
+						break;
+					default :
+						b1.transform.localScale = new Vector3(scale/4,scale/4,d);
+						b2.transform.localScale = new Vector3(scale/4,scale/4,d);
+						break;
+					}
+
+
+					for(int j=0;j<m1.vertexCount;j++){
+						colors[index*2*m1.vertexCount+j] = setColorAtm (mol.Atoms [mol.Bonds [i] [0]], color);
+						colors[(index*2+1)*m1.vertexCount+j] = setColorAtm (mol.Atoms [mol.Bonds [i] [1]], color);
+					}
+
+
+
+					combine[index*2].mesh = m1;
+					combine[index*2].transform = b1.GetComponentInChildren<MeshFilter>().transform.localToWorldMatrix;
+					combine[index*2+1].mesh = m2;
+					combine[index*2+1].transform = b2.GetComponentInChildren<MeshFilter>().transform.localToWorldMatrix;
+					index++;
+				}
+				i++;
+				
+			}
+			
+			mesh.CombineMeshes(combine);
+			//CombineMeshes does not combine colors, we have to set them manually
+			
+			mesh.colors = colors;
+			mesh.RecalculateBounds();
+			meshes.Add (mesh);
+			
+			
+		}
+		Destroy (b1);
+		Destroy (b2);
+		
+	}
+
+
+
+
+
+
+
+
+
+
+
 	public void DisplayMolCylinders(){
-		scale = 0.25f;
 		bonds = new List<GameObject> ();
 		for (int i =0; i < mol.Bonds.Count; i++) {
 
@@ -123,12 +296,12 @@ public class DisplayUnityObj : DisplayMolecule {
 				float d = Vector3.Distance(mol.Atoms [mol.Bonds [i] [0]].Location[frame],mol.Atoms [mol.Bonds [i] [1]].Location[frame])/4;
 				switch(type){
 				case TypeDisplay.CPK : 
-					b1.transform.localScale = new Vector3(scale/4,scale/4,d);
-					b2.transform.localScale = new Vector3(scale/4,scale/4,d);
+					b1.transform.localScale = new Vector3(scale/16,scale/16,d);
+					b2.transform.localScale = new Vector3(scale/16,scale/16,d);
 					break;
 				default :
-					b1.transform.localScale = new Vector3(scale,scale,d);
-					b2.transform.localScale = new Vector3(scale,scale,d);
+					b1.transform.localScale = new Vector3(scale/4,scale/4,d);
+					b2.transform.localScale = new Vector3(scale/4,scale/4,d);
 					break;
 				}
 				b1.GetComponentInChildren<Renderer>().material = setMaterialAtm(mol.Atoms [mol.Bonds [i] [0]],color);
@@ -142,7 +315,7 @@ public class DisplayUnityObj : DisplayMolecule {
 	}
 
 	public void DisplayMolTubes(){
-		scale = 0.5f;
+
 		bonds = new List<GameObject> ();
 		bool skip;
 
@@ -164,7 +337,7 @@ public class DisplayUnityObj : DisplayMolecule {
 					b1.transform.LookAt (mol.Atoms [mol.ChainsBonds [c] [i+1]].Location[frame]);
 					float d = Vector3.Distance (mol.Atoms [mol.ChainsBonds [c] [i]].Location[frame], mol.Atoms [mol.ChainsBonds [c] [i+1]].Location[frame]) / 2;
 					b1.GetComponentInChildren<Transform>().localScale = new Vector3(1.0f,1.0f,1.0f);
-					b1.transform.localScale = new Vector3 (scale, scale, d);
+					b1.transform.localScale = new Vector3 (scale * 0.5f, scale * 0.5f, d);
 
 		
 					b1.GetComponentInChildren<Renderer> ().material = setMaterialAtm (mol.Atoms [mol.ChainsBonds [c] [i]], color);
@@ -207,7 +380,7 @@ public class DisplayUnityObj : DisplayMolecule {
 				b1.transform.LookAt (mol.Atoms [mol.ChainsBonds [c] [i+1]].Location[Main.current_frame]);
 				float d = Vector3.Distance (mol.Atoms [mol.ChainsBonds [c] [i]].Location[Main.current_frame], mol.Atoms [mol.ChainsBonds [c] [i+1]].Location[Main.current_frame]) / 2;
 
-				b1.transform.localScale = new Vector3 (scale, scale, d);
+				b1.transform.localScale = new Vector3 (scale * 0.5f, scale * 0.5f, d);
 				index++;
 			
 			}
@@ -232,12 +405,12 @@ public class DisplayUnityObj : DisplayMolecule {
 			float d = Vector3.Distance(mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame],mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame])/4;
 			switch(type){
 			case TypeDisplay.CPK : 
-				b1.transform.localScale = new Vector3(scale/4,scale/4,d);
-				b2.transform.localScale = new Vector3(scale/4,scale/4,d);
+				b1.transform.localScale = new Vector3(scale/16,scale/16,d);
+				b2.transform.localScale = new Vector3(scale/16,scale/16,d);
 				break;
 			default :
-				b1.transform.localScale = new Vector3(scale,scale,d);
-				b2.transform.localScale = new Vector3(scale,scale,d);
+				b1.transform.localScale = new Vector3(scale/4,scale/4,d);
+				b2.transform.localScale = new Vector3(scale/4,scale/4,d);
 				break;
 			}
 

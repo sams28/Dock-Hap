@@ -15,7 +15,7 @@ SubShader {
         }
         SetTexture [_MainTex] {
             constantColor [_Color]
-            Combine previous * constant DOUBLE, previous * constant
+            Combine previous * constant, previous * constant
         } 
 
     } //end pass

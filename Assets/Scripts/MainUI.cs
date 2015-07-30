@@ -59,6 +59,19 @@ public class MainUI : MonoBehaviour {
 
 
 
+	private Vector2 deg;
+	private Vector3 trans;
+	private Vector2 pos;
+	private Quaternion rot;
+	
+	
+	public Vector3 center= new Vector3 (0, 0, 0);
+	public float sensitivityX = 0.5f;
+	public float sensitivityY = 0.5f;
+
+
+
+
 
 	private Camera canvasCamera;
 	private bool openMenu,showFPS, typeMenu,colorMenu;
@@ -66,7 +79,8 @@ public class MainUI : MonoBehaviour {
 	private ColorDisplay color;
 	private TypeDisplay type;
 	private RenderDisplay render;
-	public GameObject ui;
+
+	public GameObject system;
 	public GameObject contents;
 
 
@@ -85,9 +99,9 @@ public class MainUI : MonoBehaviour {
 
 		labels_mol = new List<GameObject> ();
 
-		start = ui.transform.FindChild ("Start").gameObject;
-		menu = ui.transform.FindChild ("Menu").gameObject;
-		perm = ui.transform.FindChild ("Permanent").gameObject;
+		start = transform.FindChild ("Start").gameObject;
+		menu = transform.FindChild ("Menu").gameObject;
+		perm = transform.FindChild ("Permanent").gameObject;
 		perm.transform.FindChild ("FPS").gameObject.SetActive(showFPS);
 		prefab_toggle = (Resources.Load ("Prefabs/Toggle_content") as GameObject);
 
@@ -113,14 +127,19 @@ public class MainUI : MonoBehaviour {
 		current_mol = 1;
 
 		menu.SetActive (false);
-		//start.transform.FindChild ("LoadFile").GetComponent<InputField> ().text = Application.dataPath+"/Resources/dyna1.gro";
-		start.transform.FindChild ("LoadFile").GetComponent<InputField> ().text = "/Users/Samba/Documents/molecules/imdgroup.gro";
-		//start.transform.FindChild ("LoadFile").GetComponent<InputField> ().text = Application.dataPath+"/Resources/1BRS.pdb";
+		//start.transform.FindChild ("LoadMolecule").GetComponent<InputField> ().text = Application.dataPath+"/Resources/dyna1.gro";
+		start.transform.FindChild ("LoadMolecule").GetComponent<InputField> ().text = Application.dataPath+"/../../molecules/1BRS.pdb";
+		//start.transform.FindChild ("LoadMolecule").GetComponent<InputField> ().text = Application.dataPath+"/Resources/1BRS.pdb";
 	
 	}
 	
 	// Update is called once per frame
 	void Update () {
+
+		if (!start.activeInHierarchy) {
+
+			MoveMolecule(menu.activeInHierarchy);
+		}
 
 		if (Input.GetKeyDown(KeyCode.Escape) )
 		{
@@ -129,11 +148,13 @@ public class MainUI : MonoBehaviour {
 	}
 
 
+
+
 	public void AddContents(InputField passField){
 
-		if (GetComponent<Main> ().SetMolecule (passField.text,true)) {
+		if (system.GetComponent<Main> ().SetMolecule (passField.text,true)) {
 
-			int count = GetComponent<Main> ().molecules.Count-1;
+			int count = system.GetComponent<Main> ().molecules.Count-1;
 
 			if (count > 4) {
 				contents.GetComponent<RectTransform> ().sizeDelta = new Vector2 (contents.GetComponent<RectTransform> ().sizeDelta.x, 20 * (count-1));
@@ -158,9 +179,9 @@ public class MainUI : MonoBehaviour {
 
 
 			current_mol = count;
-			GetComponent<Main> ().SetColors (current_mol);
-			GetComponent<Main> ().SetMaterials (current_mol);
-			GetComponent<Main> ().DisplayMolecules (current_mol);
+			system.GetComponent<Main> ().SetColors (current_mol);
+			system.GetComponent<Main> ().SetMaterials (current_mol);
+			system.GetComponent<Main> ().DisplayMolecules (current_mol);
 		}
 	}
 
@@ -170,19 +191,19 @@ public class MainUI : MonoBehaviour {
 
 
 		for(int k=0;k<subMenus[0].Elements.Count;k++){
-			if(StringToRenderDisplay(subMenus[0].Elements[k].name) ==  GetComponent<Main> ().molecules [current_mol].render)
+			if(StringToRenderDisplay(subMenus[0].Elements[k].name) ==  system.GetComponent<Main> ().molecules [current_mol].render)
 				subMenus[0].Elements[k].GetComponent<Toggle>().isOn = true;
 			else
 				subMenus[0].Elements[k].GetComponent<Toggle>().isOn = false;
 		}
 		for(int k=0;k<subMenus[1].Elements.Count;k++){
-			if(StringToTypeDisplay(subMenus[1].Elements[k].name) ==  GetComponent<Main> ().molecules [current_mol].type)
+			if(StringToTypeDisplay(subMenus[1].Elements[k].name) ==  system.GetComponent<Main> ().molecules [current_mol].type)
 				subMenus[1].Elements[k].GetComponent<Toggle>().isOn = true;
 			else
 				subMenus[1].Elements[k].GetComponent<Toggle>().isOn = false;
 		}
 		for(int k=0;k<subMenus[2].Elements.Count;k++){
-			if(StringToColorDisplay(subMenus[2].Elements[k].name) ==  GetComponent<Main> ().molecules [current_mol].color)
+			if(StringToColorDisplay(subMenus[2].Elements[k].name) ==  system.GetComponent<Main> ().molecules [current_mol].color)
 				subMenus[2].Elements[k].GetComponent<Toggle>().isOn = true;
 			else
 				subMenus[2].Elements[k].GetComponent<Toggle>().isOn = false;
@@ -194,16 +215,16 @@ public class MainUI : MonoBehaviour {
 
 	public void ApplyFrames (InputField passField){
 	
-		GetComponent<Main> ().SetFrames (passField.text);
+		system.GetComponent<Main> ().SetFrames (passField.text);
 
 	}
 
 
 
 	public void ApplyMol (InputField passField){
-		if (GetComponent<Main> ().SetMolecule (passField.text,false,current_mol)) {
+		if (system.GetComponent<Main> ().SetMolecule (passField.text,false,current_mol)) {
 			labels_mol[current_mol-1].transform.FindChild ("Label").GetComponent<Text> ().text =passField.text;
-			GetComponent<Main> ().DisplayMolecules (current_mol);
+			system.GetComponent<Main> ().DisplayMolecules (current_mol);
 		}
 
 	}
@@ -214,9 +235,9 @@ public class MainUI : MonoBehaviour {
 			labels_mol.RemoveAt(current_mol-1);
 			for(int i=0;i<Main.total_frames;i++){
 
-			Destroy(GetComponent<Main> ().molecules[current_mol].Gameobject[i]);
+			Destroy(system.GetComponent<Main> ().molecules[current_mol].Gameobject[i]);
 			}
-			GetComponent<Main> ().molecules.RemoveAt(current_mol);
+			system.GetComponent<Main> ().molecules.RemoveAt(current_mol);
 			Resources.UnloadUnusedAssets ();
 			current_mol -=1;
 
@@ -266,7 +287,7 @@ public class MainUI : MonoBehaviour {
 	
 	public void ShowRender(string s)
 	{
-		GetComponent<Main> ().molecules [current_mol].render = StringToRenderDisplay(s);
+		system.GetComponent<Main> ().molecules [current_mol].render = StringToRenderDisplay(s);
 
 	}
 
@@ -293,9 +314,9 @@ public class MainUI : MonoBehaviour {
 
 	public void ShowColor(string s)
 	{
-		GetComponent<Main> ().molecules [current_mol].color = StringToColorDisplay(s);
-		GetComponent<Main> ().SetColors (current_mol);
-		GetComponent<Main> ().SetMaterials (current_mol);
+		system.GetComponent<Main> ().molecules [current_mol].color = StringToColorDisplay(s);
+		system.GetComponent<Main> ().SetColors (current_mol);
+		system.GetComponent<Main> ().SetMaterials (current_mol);
 
 	}
 
@@ -320,7 +341,7 @@ public class MainUI : MonoBehaviour {
 	
 	public void ShowType(string s)
 	{
-		GetComponent<Main> ().molecules [current_mol].type = StringToTypeDisplay(s);
+		system.GetComponent<Main> ().molecules [current_mol].type = StringToTypeDisplay(s);
 
 	}
 
@@ -345,70 +366,45 @@ public class MainUI : MonoBehaviour {
 	
 	public void ShowSelect(string s)
 	{
-		GetComponent<Main> ().molecules [0].select = StringToSelectDisplay(s);
-		GetComponent<SelectAtoms> ().FlushSelect ();
+		system.GetComponent<Main> ().molecules [0].select = StringToSelectDisplay(s);
+		system.GetComponent<SelectAtoms> ().FlushSelect ();
 
 		
 	}
 
 
-
-
-
-	/*
-
-	public void ShowWaterAtm()
+	public void SetFileMol(InputField passField)
 	{
-
-		showWater = !showWater;
-
-		GetComponent<Main> ().molecules [0].showWater = showWater;
-		GetComponent<Main> ().DisplayWater ();
-		
+		system.GetComponent<Main> ().molecule_file = passField.text;
 	}
 
-	public void ShowHetAtm(Toggle t)
+	public void SetFileTraj(InputField passField)
 	{
-		showHet = !showHet;
-
-		GetComponent<Main> ().molecules [0].showHetAtoms = showHet;
-		GetComponent<Main> ().DisplayHetAtm ();
-
-		if (!showHet)
-			t.interactable =false;
-		else
-			t.interactable =true;
-
-		
-	}*/
-
-	public void SetFile(InputField passField)
-	{
-		GetComponent<Main> ().resource_name = passField.text;
+		system.GetComponent<Main> ().trajectory_file = passField.text;
 	}
-	public void Load(InputField passField)
+
+	public void Load()
 	{
-		GetComponent<Main> ().resource_name = passField.text;
 		start.SetActive (false);
-		GetComponent<Main> ().Init ();
+		system.GetComponent<Main> ().Init ();
 	}
 
 
 
 	public void SetVRPNParam(InputField passField)
 	{
-		GetComponent<VRPN> ().setParams(passField.text);
+		system.GetComponent<VRPN> ().setParams(passField.text);
 	}
 
 
 	public void SetIMDServer(InputField passField)
 	{
-		GetComponent<IMD> ().Server = passField.text;
+		system.GetComponent<IMD> ().Server = passField.text;
 		
 	}
 	public void SetIMDPort(InputField passField)
 	{
-		GetComponent<IMD> ().Port = int.Parse (passField.text);
+		system.GetComponent<IMD> ().Port = int.Parse (passField.text);
 		
 	}
 
@@ -416,15 +412,15 @@ public class MainUI : MonoBehaviour {
 
 
 	public void VRPNStart(){
-		GetComponent<SelectAtoms> ().Init ();
-		GetComponent<VRPN> ().Init ();
+		system.GetComponent<SelectAtoms> ().Init ();
+		system.GetComponent<VRPN> ().Init ();
 
 	}
 
 	public void VRPNStop(){
 
-		GetComponent<SelectAtoms> ().Delete ();
-		GetComponent<VRPN> ().Stop ();
+		system.GetComponent<SelectAtoms> ().Delete ();
+		system.GetComponent<VRPN> ().Stop ();
 		
 	}
 
@@ -435,6 +431,14 @@ public class MainUI : MonoBehaviour {
 		openMenu=!openMenu;
 		menu.gameObject.SetActive(openMenu); 
 	}
+
+
+	public void ChangeSize(Slider s)
+	{
+		Main.globalScale =s.value;
+		
+	}
+
 
 	public void ShowFPS()
 	{
@@ -472,5 +476,67 @@ public class MainUI : MonoBehaviour {
 
 	}
 */
+	public void MoveMolecule(bool menu){
+		
+		
+		
+		
+		bool b;
+		
+		
+		if(menu)
+			b = Input.mousePosition.x > Screen.width * 0.18f;
+		else
+			b= true;
+		
+		
+		if (Input.GetMouseButton (0) && b) {
+
+
+			if (Input.mousePosition.x < Screen.width * 0.85f && Input.mousePosition.y < Screen.height * 0.85f && Input.mousePosition.y > Screen.height * 0.15f) {	
+				deg.x += Input.GetAxis ("Mouse X") * sensitivityX;
+				deg.y += -Input.GetAxis ("Mouse Y") * sensitivityY;
+			}
+			else{
+				deg.x += Input.GetAxis ("Mouse X") * sensitivityX;
+				deg.y += Input.GetAxis ("Mouse Y") * sensitivityY;
+			}
+
+			
+		} 
+		else if (Input.GetMouseButton (2)) {
+			trans.x += Input.GetAxis ("Mouse X") * sensitivityX;
+			trans.y += Input.GetAxis ("Mouse Y") * sensitivityY;
+			pos.x = trans.x;
+			pos.y = trans.y;
+		}
+		
+		else {
+			
+			deg.x=0;
+			deg.y=0;
+			trans.x=0;
+			trans.y=0;
+			
+		}
+		
+		
+		
+		
+		if (!Camera.main.orthographic){
+			trans.z = Input.GetAxis ("Mouse ScrollWheel")*5;//
+			
+		}
+		
+		Camera.main.transform.RotateAround (new Vector3 (pos.x+center.x, pos.y+center.y,center.z), Camera.main.transform.up, deg.x);
+		Camera.main.transform.RotateAround (new Vector3 (pos.x+center.x, pos.y+center.y,center.z), Camera.main.transform.right, deg.y);
+		Camera.main.transform.Translate (new Vector3 (trans.x, trans.y, trans.z*10), Space.Self);
+		
+		
+		
+	}
+
+
+
 
 }

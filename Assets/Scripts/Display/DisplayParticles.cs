@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -38,7 +38,7 @@ public class DisplayParticles : DisplayMolecule {
 
 	public void DisplayMolPoints()
 	{
-		scale = 1.0f;
+
 
 		particles_atoms = new ParticleSystem.Particle[mol.Atoms.Count];
 		//the Shuriken object must be visible for the camera, so we set it to the camera
@@ -64,7 +64,7 @@ public class DisplayParticles : DisplayMolecule {
 	}
 	public void DisplayMolLines(){
 
-		scale = 1.0f;
+
 		
 		particles_bonds = new ParticleSystem.Particle[mol.Bonds.Count*2];
 		//the Shuriken object must be visible for the camera, so we set it to the camera

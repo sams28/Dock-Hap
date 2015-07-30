@@ -10,7 +10,7 @@ public class DisplayMeshs : DisplayMolecule {
 
 
 
-	public float resolution_surface =0.1f;
+
 	
 	private GameObject[] m_mesh;
 	public List<Mesh> meshes;
@@ -100,72 +100,7 @@ public class DisplayMeshs : DisplayMolecule {
 	}
 
 
-	public void DisplayMolPointCloud2(){
 
-		int i = 0;
-		int index;
-		float scale = 1.0f;
-		standard_gameobject = GameObject.CreatePrimitive (PrimitiveType.Sphere);
-		Mesh m = standard_gameobject.GetComponent<MeshFilter> ().mesh;
-
-
-
-		meshes = new List<Mesh> ();
-		while (i < mol.Atoms.Count) {
-
-
-			Mesh mesh = new Mesh ();
-			mesh.MarkDynamic ();
-			GameObject g = (GameObject)Instantiate (Resources.Load("Prefabs/SubMesh") as GameObject, Vector3.zero, Quaternion.identity);
-			g.transform.SetParent(this.transform,false);
-			g.GetComponent<MeshFilter> ().mesh = mesh;
-
-			CombineInstance[] combine;
-
-			if((mol.Atoms.Count-i)*m.vertexCount < MAX_SIZE_MESH)
-			{
-				combine = new CombineInstance[mol.Atoms.Count-i];
-				colors = new Color[(mol.Atoms.Count-i)*m.vertexCount];
-
-			}
-			else{
-				combine = new CombineInstance[MAX_SIZE_MESH/m.vertexCount];
-				colors = new Color[m.vertexCount*combine.Length];
-			}
-			index =0;
-
-			while (i < mol.Atoms.Count && index < combine.Length) {
-
-
-				standard_gameobject.transform.localPosition =mol.Atoms [i].Location[frame];
-				standard_gameobject.transform.localScale = new Vector3(scale,scale,scale);
-
-
-
-
-				for(int j=0;j<m.vertexCount;j++)
-					colors[index*m.vertexCount+j] = setColorAtm (mol.Atoms [i], color);
-
-
-				combine[index].mesh = m;
-				combine[index].transform = standard_gameobject.GetComponent<MeshFilter>().transform.localToWorldMatrix;
-				i++;
-				index++;
-				
-			}
-
-			mesh.CombineMeshes(combine);
-			//CombineMeshes does not combine colors, we have to set them manually
-
-			mesh.colors = colors;
-			mesh.RecalculateBounds();
-			meshes.Add (mesh);
-
-
-		}
-		Destroy (standard_gameobject);
-
-	}
 
 	
 	
@@ -435,7 +370,7 @@ public class DisplayMeshs : DisplayMolecule {
 	public void DisplayMolSurface() {
 		
 		
-		
+		float resolution_surface =0.1f/scale;
 		//Target is the value that represents the surface of mesh
 		//For example the perlin noise has a range of -1 to 1 so the mid point is were we want the surface to cut through
 		//The target value does not have to be the mid point it can be any value with in the range
@@ -495,7 +430,6 @@ public class DisplayMeshs : DisplayMolecule {
 		Color atomColor;
 		float atomRadius;
 		float density;
-
 		for (int o=0; o<mol.Atoms.Count; o++) {
 
 			if (mol.Atoms [o].Active) {
@@ -511,15 +445,20 @@ public class DisplayMeshs : DisplayMolecule {
 				for (int l = i-(fudgeFactor/2 -1 ); l < i+(fudgeFactor/2); l++)
 					for (int m = j-(fudgeFactor/2 -1); m < j+(fudgeFactor/2); m++)
 						for (int n = k-(fudgeFactor/2 -1); n < k+(fudgeFactor/2); n++) {
-							Vector3 v2 = new Vector3 (l, m, n);
-							Dist = Vector3.Distance (v1, v2);
-							density = (float)Math.Exp (-((Dist / atomRadius) * (Dist / atomRadius)));
-						
-							if (density > gridS [l, m, n])
-								VertColor [l, m, n] = atomColor;
+						Vector3 v2 = new Vector3 (l, m, n);
+						Dist = Vector3.Distance (v1, v2);
+						density = (float)Math.Exp (-((Dist / atomRadius) * (Dist / atomRadius)));
+							
+
+						if (density > gridS [l, m, n]){
+
+							VertColor [l, m, n] = atomColor;
+						}
 							gridS [l, m, n] += density;
 						}
+
 			}
+
 		}
 
 		/*
@@ -577,7 +516,6 @@ public class DisplayMeshs : DisplayMolecule {
 			}
 			
 			mesh[l].normals = normals;
-
 		}
 
 		//Color
@@ -602,7 +540,7 @@ public class DisplayMeshs : DisplayMolecule {
 			m_mesh[s].AddComponent<MeshFilter>();
 			m_mesh[s].AddComponent<MeshRenderer>();
 			m_mesh[s].GetComponent<MeshFilter>().mesh = mesh[s];
-			m_mesh[s].GetComponent<MeshRenderer>().material= Resources.Load("Materials/Meshs") as Material;
+			m_mesh[s].GetComponent<MeshRenderer>().material= Resources.Load("Materials/Surface") as Material;
 
 			
 		}
