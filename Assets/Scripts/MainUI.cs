@@ -128,7 +128,7 @@ public class MainUI : MonoBehaviour {
 
 		menu.SetActive (false);
 		//start.transform.FindChild ("LoadMolecule").GetComponent<InputField> ().text = Application.dataPath+"/Resources/dyna1.gro";
-		start.transform.FindChild ("LoadMolecule").GetComponent<InputField> ().text = Application.dataPath+"/../../molecules/1BRS.pdb";
+		start.transform.FindChild ("LoadMolecule").GetComponent<InputField> ().text = "/Users/Samba/Documents/molecules/imd_ini.pdb";
 		//start.transform.FindChild ("LoadMolecule").GetComponent<InputField> ().text = Application.dataPath+"/Resources/1BRS.pdb";
 	
 	}
@@ -235,18 +235,14 @@ public class MainUI : MonoBehaviour {
 			labels_mol.RemoveAt(current_mol-1);
 			for(int i=0;i<Main.total_frames;i++){
 
-			Destroy(system.GetComponent<Main> ().molecules[current_mol].Gameobject[i]);
+				Destroy(system.GetComponent<Main> ().molecules[current_mol].Gameobject[i]);
+
 			}
 			system.GetComponent<Main> ().molecules.RemoveAt(current_mol);
 			Resources.UnloadUnusedAssets ();
 			current_mol -=1;
-
-
 		}
 
-
-
-		
 	}
 
 
@@ -492,13 +488,11 @@ public class MainUI : MonoBehaviour {
 		
 		if (Input.GetMouseButton (0) && b) {
 
-
+			deg.x += Input.GetAxis ("Mouse X") * sensitivityX;
 			if (Input.mousePosition.x < Screen.width * 0.85f && Input.mousePosition.y < Screen.height * 0.85f && Input.mousePosition.y > Screen.height * 0.15f) {	
-				deg.x += Input.GetAxis ("Mouse X") * sensitivityX;
 				deg.y += -Input.GetAxis ("Mouse Y") * sensitivityY;
 			}
 			else{
-				deg.x += Input.GetAxis ("Mouse X") * sensitivityX;
 				deg.y += Input.GetAxis ("Mouse Y") * sensitivityY;
 			}
 

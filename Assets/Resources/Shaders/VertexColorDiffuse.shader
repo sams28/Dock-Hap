@@ -2,19 +2,19 @@
 	Properties {
 		_PointSize("PointSize", Float) = 1
 		_MainTex ("Base (RGB)", 2D) = "white" { }
+		_Color ("Color", Color) = (0,0,0,0)
 	}
 	SubShader {
 	Tags { "RenderType"="Opaque" }
 	Pass {	
          Tags { "LightMode" = "ForwardBase" } 
             // make sure that all uniforms are correctly set
-
+		Cull Off
          GLSLPROGRAM
          
 
  		 #extension GL_EXT_gpu_shader4 : require
 		varying vec4 xlv_COLOR;
-
 
 		#ifdef VERTEX
 		uniform mat4 _Object2World;
@@ -64,7 +64,7 @@ void main ()
 {
   vec4 c_1;
   vec4 tmpvar_2;
-  tmpvar_2 = (texture2D (_MainTex, xlv_TEXCOORD0) * xlv_COLOR);
+  tmpvar_2 = (texture2D (_MainTex, xlv_TEXCOORD0) * xlv_COLOR* _Color);
   vec4 c_3;
   vec4 c_4;
   c_4.xyz = ((tmpvar_2.xyz * _LightColor0.xyz) * max (0.0, dot (xlv_TEXCOORD1, _WorldSpaceLightPos0.xyz)));

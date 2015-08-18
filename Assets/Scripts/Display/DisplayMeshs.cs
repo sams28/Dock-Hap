@@ -264,10 +264,10 @@ public class DisplayMeshs : DisplayMolecule {
 		
 		while (i < mol.Atoms.Count) {
 			
-			points = new Vector3[MAX_SIZE_MESH];
+			points = meshes[j].vertices;
 			index=0;
 			
-			while (i < mol.Atoms.Count && index < MAX_SIZE_MESH) {
+			while (i < mol.Atoms.Count && index < meshes[j].vertexCount) {
 				
 
 				points[index] =  mol.Atoms[i].Location[Main.current_frame];
@@ -293,18 +293,16 @@ public class DisplayMeshs : DisplayMolecule {
 		
 		while (i <  mol.Bonds.Count) {
 			
-			points = new Vector3[MAX_SIZE_MESH];
+			points = meshes[j].vertices;
 			index =0;
 			
 			
-			while (i < mol.Bonds.Count && index*4+3 < MAX_SIZE_MESH) {
+			while (i < mol.Bonds.Count && index*4+3 < meshes[j].vertexCount) {
 
 				points [index * 4] = mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame];
 				points [index * 4 + 1] = (mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame] + mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame])/2 ;
 				points [index * 4 + 2] = (mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame] + mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame])/2 ;
 				points [index * 4 + 3] = mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame];
-
-
 				i++;
 				index++;
 			}
@@ -330,14 +328,13 @@ public class DisplayMeshs : DisplayMolecule {
 
 			int index;
 
-
 			while (i <  mol.ChainsBonds[c].Count) {
 			
-				points = new Vector3[MAX_SIZE_MESH];
+				points = meshes [j].vertices;
 				index = 0;
 			
 			
-				while (i < mol.ChainsBonds[c].Count && index < MAX_SIZE_MESH) {
+				while (i < mol.ChainsBonds[c].Count && index < meshes [j].vertexCount) {
 					points [index] = mol.Atoms [mol.ChainsBonds [c] [i]].Location[Main.current_frame];
 					i++;
 					index++;

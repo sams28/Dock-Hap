@@ -131,6 +131,7 @@ public class IMD : MonoBehaviour {
 				molecules[i].Update(temp_pos);
 				molecules[i].Energies = energies;
 
+				molecules[i].Gameobject[Main.current_frame]=molecules[i].Gameobject[Main.current_frame-1];
 				molecules[i].Gameobject[Main.current_frame].GetComponent<DisplayMolecule>().UpdateMol();
 			}
 
