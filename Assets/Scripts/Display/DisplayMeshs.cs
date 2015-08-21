@@ -13,11 +13,14 @@ public class DisplayMeshs : DisplayMolecule {
 
 	
 	private GameObject[] m_mesh;
-	public List<Mesh> meshes;
+	private List<Mesh> meshes_atm;
+	private List<Mesh> meshes_bond;
+	private List<Mesh> meshes_trace;
 	private GameObject standard_gameobject;
 	//Max size of the mesh (must be a multiple of 2,3,4)
 	private const int MAX_SIZE_MESH = 64500; 
-	
+	private SkinnedMeshRenderer[] rend;
+	private List<Transform> bones;
 	Vector3[] points;
 	int[] indices;
 	Color[] colors;
@@ -58,7 +61,7 @@ public class DisplayMeshs : DisplayMolecule {
 		int i = 0;
 		int index;
 
-		meshes = new List<Mesh> ();
+		meshes_atm = new List<Mesh> ();
 		while (i < mol.Atoms.Count) {
 
 			Mesh mesh = new Mesh ();
@@ -93,7 +96,7 @@ public class DisplayMeshs : DisplayMolecule {
 			mesh.colors = colors;
 			mesh.SetIndices (indices, MeshTopology.Points, 0);
 			mesh.RecalculateBounds();
-			meshes.Add (mesh);
+			meshes_atm.Add (mesh);
 		
 		}
 		
@@ -108,7 +111,7 @@ public class DisplayMeshs : DisplayMolecule {
 		int i = 0;
 		int index;
 
-		meshes = new List<Mesh> ();
+		meshes_bond = new List<Mesh> ();
 
 	
 
@@ -152,7 +155,7 @@ public class DisplayMeshs : DisplayMolecule {
 			mesh.colors = colors;
 			mesh.SetIndices(indices, MeshTopology.Lines,0);
 			mesh.RecalculateBounds();
-			meshes.Add(mesh);
+			meshes_bond.Add(mesh);
 		}
 
 		
@@ -163,7 +166,7 @@ public class DisplayMeshs : DisplayMolecule {
 		int i;
 		int index;
 		bool skip;
-		meshes = new List<Mesh> ();
+		meshes_trace = new List<Mesh> ();
 		
 		
 		for (int c=0; c<mol.ChainsBonds.Count; c++) {
@@ -229,7 +232,7 @@ public class DisplayMeshs : DisplayMolecule {
 
 				mesh.SetIndices(indices, MeshTopology.LineStrip,0);
 
-				meshes.Add(mesh);
+					meshes_trace.Add(mesh);
 				}
 			}
 
@@ -249,6 +252,7 @@ public class DisplayMeshs : DisplayMolecule {
 		case TypeDisplay.Points : UpdateAtoms();break;
 		case TypeDisplay.Lines : UpdateBonds();break;
 		case TypeDisplay.Trace : UpdateChains();break;
+		case TypeDisplay.Surface:UpdateSurface();break;
 		default:break;
 
 
@@ -264,18 +268,20 @@ public class DisplayMeshs : DisplayMolecule {
 		
 		while (i < mol.Atoms.Count) {
 			
-			points = meshes[j].vertices;
+			points = meshes_atm[j].vertices;
 			index=0;
 			
-			while (i < mol.Atoms.Count && index < meshes[j].vertexCount) {
+			while (i < mol.Atoms.Count && index < meshes_atm[j].vertexCount) {
 				
-
+				if(mol.Atoms[i].Active){
 				points[index] =  mol.Atoms[i].Location[Main.current_frame];
-				i++;
+				
 				index++;
+				}
+				i++;
 			}
-			meshes[j].vertices = points;
-			meshes[j].RecalculateBounds();
+			meshes_atm[j].vertices = points;
+			meshes_atm[j].RecalculateBounds();
 			j++;
 		}
 		
@@ -293,22 +299,23 @@ public class DisplayMeshs : DisplayMolecule {
 		
 		while (i <  mol.Bonds.Count) {
 			
-			points = meshes[j].vertices;
+			points = meshes_bond[j].vertices;
 			index =0;
 			
 			
-			while (i < mol.Bonds.Count && index*4+3 < meshes[j].vertexCount) {
-
+			while (i < mol.Bonds.Count && index*4+3 < meshes_bond[j].vertexCount) {
+				if(mol.Atoms [mol.Bonds [i] [0]].Active && mol.Atoms [mol.Bonds [i] [1]].Active){
 				points [index * 4] = mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame];
 				points [index * 4 + 1] = (mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame] + mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame])/2 ;
 				points [index * 4 + 2] = (mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame] + mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame])/2 ;
 				points [index * 4 + 3] = mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame];
-				i++;
+				
 				index++;
 			}
-			
-			meshes[j].vertices = points;
-			meshes[j].RecalculateBounds();
+				i++;
+			}
+			meshes_bond[j].vertices = points;
+			meshes_bond[j].RecalculateBounds();
 			j++;
 		}
 		
@@ -330,18 +337,18 @@ public class DisplayMeshs : DisplayMolecule {
 
 			while (i <  mol.ChainsBonds[c].Count) {
 			
-				points = meshes [j].vertices;
+				points = meshes_trace [j].vertices;
 				index = 0;
 			
 			
-				while (i < mol.ChainsBonds[c].Count && index < meshes [j].vertexCount) {
+				while (i < mol.ChainsBonds[c].Count && index < meshes_trace [j].vertexCount) {
 					points [index] = mol.Atoms [mol.ChainsBonds [c] [i]].Location[Main.current_frame];
 					i++;
 					index++;
 				}
 			
-				meshes [j].vertices = points;
-				meshes [j].RecalculateBounds ();
+				meshes_trace [j].vertices = points;
+				meshes_trace [j].RecalculateBounds ();
 				j++;
 			}
 		
@@ -365,7 +372,9 @@ public class DisplayMeshs : DisplayMolecule {
 
 	
 	public void DisplayMolSurface() {
-		
+
+
+
 		
 		float resolution_surface =0.1f/scale;
 		//Target is the value that represents the surface of mesh
@@ -383,7 +392,13 @@ public class DisplayMeshs : DisplayMolecule {
 
 		
 		float resolution;
-		resolution = CapResolution (mol.Atoms.Count);
+		int nbatoms=0;
+		for (int v=0; v<mol.Atoms.Count; v++) {
+			if (mol.Atoms [v].Active) {
+				nbatoms++;
+			}
+		}
+		resolution = CapResolution (nbatoms);
 
 		//The size of voxel array. Be carefull not to make it to large as a mesh in unity can only be made up of 65000 verts
 		int X = (int)(((mol.MaxValue.x - mol.MinValue.x ) * resolution) + 13);
@@ -401,9 +416,12 @@ public class DisplayMeshs : DisplayMolecule {
 		
 		float[,,] gridS = new float[X,Y,Z];
 		Color[,,] VertColor = new Color[X, Y, Z];
+		//int[,,][] ids = new int[X,Y,Z][10];
 		List<Mesh> mesh = new List<Mesh>();
 
-
+		bones = new List<Transform>();
+		List<Matrix4x4> bindPoses = new List<Matrix4x4>();
+		List<Vector3> pos_bones= new List<Vector3>();
 		
 		Vector3 delta = new Vector3 (resolution, resolution, resolution); //resolution
 		
@@ -411,15 +429,11 @@ public class DisplayMeshs : DisplayMolecule {
 		// the first molecule for which we generate a surface.
 		//Vector3 origin = mol.MinValue;
 		Debug.Log ("Entering :: Generation of density from PDB");
-		
-		
-
 
 		//Debug.Log ("Density point X,Y,Z :: " + X + "," + Y + "," + Z);
 		//Debug.Log ("Density minValue :: " + MinValue);
-		
-		
-		
+
+		//count for each atom the grid ?
 		int i;
 		int j;
 		int k;
@@ -427,16 +441,29 @@ public class DisplayMeshs : DisplayMolecule {
 		Color atomColor;
 		float atomRadius;
 		float density;
+		GameObject bones_g = new GameObject ("bones");
+		bones_g.transform.SetParent (this.transform, false);
 		for (int o=0; o<mol.Atoms.Count; o++) {
 
+
 			if (mol.Atoms [o].Active) {
+
+				Transform tr = new GameObject(mol.Atoms [o].AtomName).transform;
+				tr.parent = bones_g.transform;
+				tr.localRotation = Quaternion.identity;
+				tr.localPosition = mol.Atoms [o].Location[frame];
+				bones.Add(tr);
+				pos_bones.Add(tr.localPosition);
+				bindPoses.Add(tr.worldToLocalMatrix * mol.Gameobject[frame].transform.localToWorldMatrix);
+
 
 				i = Mathf.RoundToInt ((mol.Atoms [o].Location[frame].x - mol.MinValue.x) * delta.x + fudgeFactor);
 				j = Mathf.RoundToInt ((mol.Atoms [o].Location[frame].y - mol.MinValue.y) * delta.y + fudgeFactor);
 				k = Mathf.RoundToInt ((mol.Atoms [o].Location[frame].z - mol.MinValue.z) * delta.z + fudgeFactor);
 				Vector3 v1 = new Vector3 (i, j, k);
 				
-				atomRadius = mol.Atoms [o].AtomRadius;				
+				atomRadius = mol.Atoms [o].AtomRadius;
+			
 				atomColor = setColorAtm (mol.Atoms [o], color);
 
 				for (int l = i-(fudgeFactor/2 -1 ); l < i+(fudgeFactor/2); l++)
@@ -458,44 +485,51 @@ public class DisplayMeshs : DisplayMolecule {
 
 		}
 
-		/*
-
-		for (int o =0; o<mol.Atoms.Count; o++) {
-			i = Mathf.RoundToInt ((mol.Atoms [o].Location[frame].x - mol.MinValue.x)+fudgeFactor.x);
-			j = Mathf.RoundToInt ((mol.Atoms [o].Location[frame].y - mol.MinValue.y)+fudgeFactor.y);
-			k = Mathf.RoundToInt ((mol.Atoms [o].Location[frame].z - mol.MinValue.z)+fudgeFactor.z);
-			Vector3 v1 = new Vector3 (i, j, k);
-
-
-			atomRadius = mol.Atoms [o].AtomRadius;				
-			atomColor = mol.Atoms [o].ObjColor;
-
-
-			for (int l = i-4; l < i+9; l++)// correspond à la fenetre de fudgefactor
-				for (int m = j-4; m < j+9; m++)
-				for (int n = k-4; n < k+9; n++) {
-
-
-
-					Vector3 v2 = new Vector3 (l, m, n);
-					Dist = Vector3.Distance (v1, v2);
-					density = (float)Math.Exp (-((Dist / atomRadius) * (Dist / atomRadius)));
-
-					if (density > gridS [l, m, n])
-						VertColor [l, m, n] = atomColor;
-					gridS [l, m, n] += density;
-
-			}
-
-
-
-		}
-		*/
-
+	
 		//gridS = SmoothVoxels (gridS);
 
 		mesh = MarchingCubes.CreateMesh(gridS,VertColor);
 
+		float t = Time.realtimeSinceStartup;
+		//Bones
+
+
+		for (int l=0; l<mesh.Count; l++) {
+			BoneWeight[] bonesWeight = new BoneWeight[mesh[l].vertexCount];
+			float dist;
+			float minDist;
+	
+
+			//mesh[l].vertices[X] is way too expensive, so we stock everything in a temporary  variable
+
+			//Vector3[] vert = mesh[l].vertices;
+			Vector3[] v = mesh[l].vertices;
+
+			for (int a = 0; a< mesh[l].vertexCount;a++){
+
+				minDist = Vector3.Distance(v[0]/resolution +offset,pos_bones[0]);
+				bonesWeight[a].boneIndex0 = 0;
+
+				for(int  b=0;b<bones.Count;b++){
+					dist =  Vector3.Distance(v[a]/resolution +offset,pos_bones[b]);
+					
+					if (dist < minDist) {
+						minDist = dist;
+						bonesWeight[a].boneIndex0 =b;
+					}
+
+				}
+
+				bonesWeight[a].weight0 = 1;
+
+			}
+
+			mesh[l].boneWeights = bonesWeight;
+			mesh[l].bindposes = bindPoses.ToArray();
+
+		}
+
+		Debug.Log (Time.realtimeSinceStartup - t);
 		//Normals
 
 
@@ -513,9 +547,9 @@ public class DisplayMeshs : DisplayMolecule {
 			}
 			
 			mesh[l].normals = normals;
+
 		}
 
-		//Color
 
 
 
@@ -529,24 +563,61 @@ public class DisplayMeshs : DisplayMolecule {
 		
 		//m_mesh.GetComponent<MeshRenderer>().material = m_material;
 		m_mesh = new GameObject[mesh.Count];
+		rend = new SkinnedMeshRenderer[mesh.Count];
+		bones_g.transform.localPosition = offset;
+		bones_g.transform.localScale /= resolution;
 		for (int s =0; s<m_mesh.Length; s++) {
 			m_mesh[s] = new GameObject();
 			m_mesh[s].transform.SetParent(this.transform,false);
-			m_mesh[s].transform.localPosition = offset;
-			m_mesh[s].transform.localScale /= resolution; 
+
+
+			/*
 			m_mesh[s].AddComponent<MeshFilter>();
 			m_mesh[s].AddComponent<MeshRenderer>();
 			m_mesh[s].GetComponent<MeshFilter>().mesh = mesh[s];
 			m_mesh[s].GetComponent<MeshRenderer>().material= Resources.Load("Materials/Surface") as Material;
+			*/
+
+			m_mesh[s].AddComponent<SkinnedMeshRenderer>();
+			rend[s] = m_mesh[s].GetComponent<SkinnedMeshRenderer>();
+			rend[s].bones = bones.ToArray();
+			rend[s].sharedMesh = mesh[s];
+			rend[s].material = Resources.Load("Materials/Surface") as Material;
 
 			
 		}
 
 
+
+
+
+	}
+	private void UpdateSurface(){
+		
+		int j =0;
+	
+		for(int i=0;i<mol.Atoms.Count;i++){
+			if (mol.Atoms [i].Active) {
+			bones[j].localPosition= mol.Atoms[i].Location[Main.current_frame];
+			
+				j++;
+			}
+		}
+
+
+		for (int i=0; i<rend.Length; i++) {
+
+			rend[i].bones = bones.ToArray();
+
+
+		}
+
 	}
 
 
-	public float CapResolution(int nbAtoms) {
+
+
+	private float CapResolution(int nbAtoms) {
 		
 		float resolution = 3f;
 		
@@ -575,7 +646,7 @@ public class DisplayMeshs : DisplayMolecule {
 	}
 
 
-	int[,] m_sampler = new int[,] 
+	private int[,] m_sampler = new int[,] 
 	{
 		{1,-1,0}, {1,-1,1}, {0,-1,1}, {-1,-1,1}, {-1,-1,0}, {-1,-1,-1}, {0,-1,-1}, {1,-1,-1}, {0,-1,0},
 		{1,0,0}, {1,0,1}, {0,0,1}, {-1,0,1}, {-1,0,0}, {-1,0,-1}, {0,0,-1}, {1,0,-1}, {0,0,0},
@@ -584,7 +655,7 @@ public class DisplayMeshs : DisplayMolecule {
 
 
 
-	public float[,,] SmoothVoxels(float[,,] m_voxels)
+	private float[,,] SmoothVoxels(float[,,] m_voxels)
 	{
 		//float startTime = Time.realtimeSinceStartup;
 		
@@ -623,9 +694,11 @@ public class DisplayMeshs : DisplayMolecule {
 
 
 
+
+
 	
 
-	public Vector3[,,] CalculateNormals(float[,,] m_voxels )
+	private Vector3[,,] CalculateNormals(float[,,] m_voxels )
 	{
 		//float startTime = Time.realtimeSinceStartup;
 		
@@ -659,7 +732,7 @@ public class DisplayMeshs : DisplayMolecule {
 		return m_normals;
 	}
 
-	Vector3 TriLinearInterpNormal(Vector3 pos,Vector3[,,] m_normals)
+	private Vector3 TriLinearInterpNormal(Vector3 pos,Vector3[,,] m_normals)
 	{	
 		int x = (int)pos.x;
 		int y = (int)pos.y;
@@ -680,6 +753,14 @@ public class DisplayMeshs : DisplayMolecule {
 		
 		return z0 * (1.0f-fy) + z1 * fy;
 	}
+
+
+
+
+
+
+
+
 
 
 

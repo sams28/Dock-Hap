@@ -174,7 +174,7 @@ public class Select{
 			
 			
 		}
-		
+
 		
 		
 		
@@ -229,8 +229,7 @@ public class SelectAtoms : MonoBehaviour {
 
 	private List<Select> selects;
 	private VRPN vrpn;
-	private IMD imd;
-	private float timer =0f;
+
 
 	public List<Select> Selects{
 		get{return selects;}
@@ -242,7 +241,6 @@ public class SelectAtoms : MonoBehaviour {
 
 
 		vrpn = GetComponent<VRPN> ();
-		imd = GetComponent<IMD> ();
 
 	}
 
@@ -258,6 +256,7 @@ public class SelectAtoms : MonoBehaviour {
 
 
 			s.g = (GameObject)Instantiate (Resources.Load("Prefabs/halo") as GameObject, GetComponent<Main>().molecules[0].Location[Main.current_frame], Quaternion.identity);
+			//necessary for particles
 			s.g.transform.SetParent (Camera.main.transform);
 
 			s.par = s.g.GetComponent<ParticleSystem> ();
@@ -273,16 +272,10 @@ public class SelectAtoms : MonoBehaviour {
 
 
 	public void ClosestAtom(Molecule m,List<Device> d){
-		Color32 c;
+
 		for (int i =0; i<selects.Count; i++) {
 
-
-			
-		
-				selects[i].SetClosestElements(m,d[i].obj);
-
-
-
+			selects[i].SetClosestElements(m,d[i].obj);
 			selects[i].SetParticles(m,d[i].c);
 
 		}
@@ -366,37 +359,35 @@ public class SelectAtoms : MonoBehaviour {
 
 	public void FlushSelect(){
 
+		if (selects != null) {
+			for (int i =0; i<selects.Count; i++) {
 
-		for(int i =0;i<selects.Count;i++){
+				for (int j=0; j<selects[i].selectedAtoms.Count; j++) {
 
-			for(int j=0;j<selects[i].selectedAtoms.Count;j++){
+					Destroy (selects [i].selectedAtoms [j].ForceGameobject [i]);
 
-				Destroy(selects[i].selectedAtoms[j].ForceGameobject[i]);
-
-			}
+				}
 			
-			for (int j=0;j<selects[i].selectedResidues.Count; j++) {
+				for (int j=0; j<selects[i].selectedResidues.Count; j++) {
 
-				Destroy(selects[i].selectedResidues[j].ForceGameobject[i]);
-
+					Destroy (selects [i].selectedResidues [j].ForceGameobject [i]);
 				
-				
-			}
+				}
 			
-			for (int j=0; j<selects[i].selectedChains.Count; j++) {
-				Destroy(selects[i].selectedChains[j].ForceGameobject[i]);
+				for (int j=0; j<selects[i].selectedChains.Count; j++) {
+					Destroy (selects [i].selectedChains [j].ForceGameobject [i]);
 
 				
 				
+				}
+				ParticleSystem.Particle[] p = new ParticleSystem.Particle[100000];
+				selects [i].par.SetParticles (p, 0);
+				selects [i].selectedAtoms = new List<Atom> ();
+				selects [i].selectedResidues = new List<Residue> ();
+				selects [i].selectedChains = new List<Chain> ();
+
 			}
-			ParticleSystem.Particle[] p = new ParticleSystem.Particle[100000];
-			selects[i].par.SetParticles (p, 0);
-			selects[i].selectedAtoms = new List<Atom> ();
-			selects[i].selectedResidues = new List<Residue> ();
-			selects[i].selectedChains = new List<Chain> ();
-
 		}
-
 
 	}
 
@@ -453,7 +444,7 @@ public class SelectAtoms : MonoBehaviour {
 
 					float timeDiff = Time.realtimeSinceStartup - selects[i].LastPressedTime;
 
-					if (timeDiff < 1.0f) {
+					if (timeDiff < 0.2f) {
 						SetSelect (GetComponent<Main>().molecules [1].select,i);
 
 					

@@ -77,6 +77,9 @@ public class IMD : MonoBehaviour {
 
 		for (int i =0; i<molecules.Count; i++) {
 			molecules[i].Gameobject[Main.current_frame]=molecules[i].Gameobject[Main.current_frame-1];
+			for(int j=0;j<molecules[i].Atoms.Count;j++){
+				molecules[i].Atoms[j].Gameobject[Main.current_frame]=molecules[i].Atoms[j].Gameobject[Main.current_frame-1];
+			}
 		}
 		init = true;
 

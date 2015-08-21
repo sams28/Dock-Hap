@@ -90,7 +90,7 @@ public class MainUI : MonoBehaviour {
 	private GameObject menu;
 	private GameObject perm;
 	private GameObject prefab_toggle;
-
+	private Transform axes;
 	// Use this for initialization
 	void Start () {
 
@@ -103,6 +103,7 @@ public class MainUI : MonoBehaviour {
 		menu = transform.FindChild ("Menu").gameObject;
 		perm = transform.FindChild ("Permanent").gameObject;
 		perm.transform.FindChild ("FPS").gameObject.SetActive(showFPS);
+		axes = perm.transform.FindChild ("Axe").FindChild ("axes");
 		prefab_toggle = (Resources.Load ("Prefabs/Toggle_content") as GameObject);
 
 
@@ -128,7 +129,7 @@ public class MainUI : MonoBehaviour {
 
 		menu.SetActive (false);
 		//start.transform.FindChild ("LoadMolecule").GetComponent<InputField> ().text = Application.dataPath+"/Resources/dyna1.gro";
-		start.transform.FindChild ("LoadMolecule").GetComponent<InputField> ().text = "/Users/Samba/Documents/molecules/imd_ini.pdb";
+		start.transform.FindChild ("LoadMolecule").GetComponent<InputField> ().text = "/Users/Samba/Documents/molecules/imdgroup.gro";
 		//start.transform.FindChild ("LoadMolecule").GetComponent<InputField> ().text = Application.dataPath+"/Resources/1BRS.pdb";
 	
 	}
@@ -145,6 +146,8 @@ public class MainUI : MonoBehaviour {
 		{
 			OpenMenu();
 		}
+
+
 	}
 
 
@@ -362,7 +365,7 @@ public class MainUI : MonoBehaviour {
 	
 	public void ShowSelect(string s)
 	{
-		system.GetComponent<Main> ().molecules [0].select = StringToSelectDisplay(s);
+		system.GetComponent<Main> ().molecules [current_mol].select = StringToSelectDisplay(s);
 		system.GetComponent<SelectAtoms> ().FlushSelect ();
 
 		
@@ -521,7 +524,9 @@ public class MainUI : MonoBehaviour {
 			trans.z = Input.GetAxis ("Mouse ScrollWheel")*5;//
 			
 		}
-		
+		axes.transform.Rotate (axes.transform.up,deg.x);
+		axes.transform.Rotate (axes.transform.right,deg.y);
+
 		Camera.main.transform.RotateAround (new Vector3 (pos.x+center.x, pos.y+center.y,center.z), Camera.main.transform.up, deg.x);
 		Camera.main.transform.RotateAround (new Vector3 (pos.x+center.x, pos.y+center.y,center.z), Camera.main.transform.right, deg.y);
 		Camera.main.transform.Translate (new Vector3 (trans.x, trans.y, trans.z*10), Space.Self);
