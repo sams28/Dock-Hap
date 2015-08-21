@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using MoleculeData;
 using System.Runtime.InteropServices;
-
+using System.Threading;
 
 public class DisplayMeshs : DisplayMolecule {
 
@@ -19,8 +19,11 @@ public class DisplayMeshs : DisplayMolecule {
 	private GameObject standard_gameobject;
 	//Max size of the mesh (must be a multiple of 2,3,4)
 	private const int MAX_SIZE_MESH = 64500; 
+
 	private SkinnedMeshRenderer[] rend;
 	private List<Transform> bones;
+
+
 	Vector3[] points;
 	int[] indices;
 	Color[] colors;
@@ -390,15 +393,14 @@ public class DisplayMeshs : DisplayMolecule {
 		//MarchingCubes.SetModeToCubes();
 		MarchingCubes.SetModeToCubes();
 
-		
-		float resolution;
+
 		int nbatoms=0;
 		for (int v=0; v<mol.Atoms.Count; v++) {
 			if (mol.Atoms [v].Active) {
 				nbatoms++;
 			}
 		}
-		resolution = CapResolution (nbatoms);
+		float resolution = CapResolution (nbatoms);
 
 		//The size of voxel array. Be carefull not to make it to large as a mesh in unity can only be made up of 65000 verts
 		int X = (int)(((mol.MaxValue.x - mol.MinValue.x ) * resolution) + 13);
@@ -420,8 +422,9 @@ public class DisplayMeshs : DisplayMolecule {
 		List<Mesh> mesh = new List<Mesh>();
 
 		bones = new List<Transform>();
-		List<Matrix4x4> bindPoses = new List<Matrix4x4>();
 		List<Vector3> pos_bones= new List<Vector3>();
+		List<Matrix4x4> bindPoses = new List<Matrix4x4>();
+
 		
 		Vector3 delta = new Vector3 (resolution, resolution, resolution); //resolution
 		
@@ -494,36 +497,30 @@ public class DisplayMeshs : DisplayMolecule {
 		//Bones
 
 
+
 		for (int l=0; l<mesh.Count; l++) {
+
+
+			Vector3[] v = mesh[l].vertices;
+			int threshold = mesh[l].vertexCount/16;
+			ManualResetEvent[] doneEvents= new ManualResetEvent[16];
+			WorkChunk[] workChunks = new WorkChunk[16];
 			BoneWeight[] bonesWeight = new BoneWeight[mesh[l].vertexCount];
-			float dist;
-			float minDist;
+
+			for (int w = 0; w < doneEvents.Length; w++) {
+				workChunks[w] = new WorkChunk(v,bones.Count,bonesWeight,resolution,offset,pos_bones,w*threshold,(w+1)*threshold);
+				doneEvents[w] = workChunks[w].doneEvent;
+			}
 	
 
-			//mesh[l].vertices[X] is way too expensive, so we stock everything in a temporary  variable
-
-			//Vector3[] vert = mesh[l].vertices;
-			Vector3[] v = mesh[l].vertices;
-
-			for (int a = 0; a< mesh[l].vertexCount;a++){
-
-				minDist = Vector3.Distance(v[0]/resolution +offset,pos_bones[0]);
-				bonesWeight[a].boneIndex0 = 0;
-
-				for(int  b=0;b<bones.Count;b++){
-					dist =  Vector3.Distance(v[a]/resolution +offset,pos_bones[b]);
-					
-					if (dist < minDist) {
-						minDist = dist;
-						bonesWeight[a].boneIndex0 =b;
-					}
-
-				}
-
-				bonesWeight[a].weight0 = 1;
-
+			
+			for (int w = 0; w < doneEvents.Length; w++) {
+				doneEvents[w].Reset();
+				ThreadPool.QueueUserWorkItem(workChunks[w].CalculateBones);
+				
 			}
 
+			WaitHandle.WaitAll (doneEvents);
 			mesh[l].boneWeights = bonesWeight;
 			mesh[l].bindposes = bindPoses.ToArray();
 
@@ -592,6 +589,70 @@ public class DisplayMeshs : DisplayMolecule {
 
 
 	}
+
+	struct WorkChunk
+	{
+		// A work chunk contains an array of work items
+
+		public Vector3[] vertices;
+		public ManualResetEvent doneEvent; // a flag to signal when the work is complete
+		public int start;
+		public int end;
+		public BoneWeight[] boneWeights;
+		public List<Vector3> pos_bones;
+		public float resolution;
+		public Vector3 offset;
+		public int bones_num;
+		public WorkChunk (Vector3[] vert,int bones_num,BoneWeight[] boneWeights,float resolution,Vector3 offset,List<Vector3> pos_bones,int start,int end)
+		{
+			this.vertices = vert;
+			this.boneWeights = boneWeights;
+			this.resolution =resolution;
+			this.offset = offset;
+			this.pos_bones = pos_bones;
+			this.start = start;
+			this.end = end;
+			this.bones_num =bones_num;
+			this.doneEvent = new ManualResetEvent(false);
+		}
+		
+		public void CalculateBones (System.Object o)
+		{
+			doneEvent.Reset();
+			
+
+			float dist;
+			float minDist;
+			
+			for (int a = start; a< end && a < vertices.Length;a++){
+				
+				
+				minDist = Vector3.Distance(vertices[start]/resolution +offset,pos_bones[0]);
+				boneWeights[a].boneIndex0 = 0;
+				
+				for(int  b=0;b<bones_num;b++){
+					dist =  Vector3.Distance(vertices[a]/resolution +offset,pos_bones[b]);
+					
+					if (dist < minDist) {
+						minDist = dist;
+						boneWeights[a].boneIndex0 =b;
+					}
+					
+				}
+				
+				boneWeights[a].weight0 = 1;
+				
+				
+				
+			}
+			
+			doneEvent.Set ();
+		}
+	}
+
+
+
+
 	private void UpdateSurface(){
 		
 		int j =0;
