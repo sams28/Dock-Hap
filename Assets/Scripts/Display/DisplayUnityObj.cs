@@ -52,7 +52,7 @@ public class DisplayUnityObj : DisplayMolecule {
 		color = c;
 		frame = f;
 		switch (t) {
-		case TypeDisplay.Points :  DisplayMolSpheresOld();break;
+		case TypeDisplay.Points :  DisplayMolSpheres();break;
 		case TypeDisplay.VDW :  DisplayMolSpheres();break;
 		case TypeDisplay.Lines :  DisplayMolCylinders();break;
 		case TypeDisplay.CPK : DisplayMolSpheres();DisplayMolCylinders();break;
@@ -65,7 +65,7 @@ public class DisplayUnityObj : DisplayMolecule {
 	public override void UpdateMol(){
 		
 		switch(type){
-		case TypeDisplay.Points : UpdateAtomsOld();break;
+		case TypeDisplay.Points : UpdateAtoms();break;
 		case TypeDisplay.VDW : UpdateAtoms();break;
 		case TypeDisplay.Lines : UpdateBonds();break;
 		case TypeDisplay.CPK : UpdateAtoms();UpdateBonds();break;

@@ -524,8 +524,9 @@ public class MainUI : MonoBehaviour {
 			trans.z = Input.GetAxis ("Mouse ScrollWheel")*5;//
 			
 		}
-		axes.transform.Rotate (axes.transform.up,deg.x);
-		axes.transform.Rotate (axes.transform.right,deg.y);
+
+
+		axes.transform.rotation *= Quaternion.AngleAxis(-deg.x,Camera.main.transform.up)*Quaternion.AngleAxis(-deg.y,Camera.main.transform.right);
 
 		Camera.main.transform.RotateAround (new Vector3 (pos.x+center.x, pos.y+center.y,center.z), Camera.main.transform.up, deg.x);
 		Camera.main.transform.RotateAround (new Vector3 (pos.x+center.x, pos.y+center.y,center.z), Camera.main.transform.right, deg.y);
