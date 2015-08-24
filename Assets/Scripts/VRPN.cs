@@ -25,28 +25,39 @@ public struct VRPNReport
 	public double[] pos;
 	[ MarshalAs( UnmanagedType.ByValArray, SizeConst=4 )]
 	public double[] quat;
+
 }
 
 // Button report data structure from UART
 
 #if UNITY_STANDALONE_WIN
 [ StructLayout( LayoutKind.Sequential, Pack=0 )]
-#else
-[ StructLayout( LayoutKind.Sequential, Pack=1 )]
-#endif
 public struct VRPNButtonReport
 {
+
 	public TimeVal msg_time;
 	public int button;
 	public int state;
 }
+#else
+[ StructLayout( LayoutKind.Sequential, Pack=1 )]
+public struct VRPNButtonReport
+{
+	
+	public IntPtr msg_time;
+	public int button;
+	public int state;
+}
+#endif
+
+
 
 
 [ StructLayout( LayoutKind.Sequential )]
 public struct TimeVal
 {
-	public UInt32 tv_sec;
-	public UInt32 tv_usec;
+	public long tv_sec;
+	public long tv_usec;
 }
 
 
@@ -77,6 +88,9 @@ public class Device{
 	private IntPtr trackReport;
 	private IntPtr velReport;
 	private IntPtr buttonReport;
+	private double[] temp_pos = new double[3];
+	private double[] temp_quat = new double[4];
+	
 	private Vector3 initPos;
 	private Quaternion initRot;
 	public float baseScale = 60.0f;
@@ -160,8 +174,16 @@ public class Device{
 	public string Server{
 		get{return server;}
 		set{server = value;}
-	} 
+	}
 
+	public double[] Temp_pos{
+		get{return temp_pos;}
+		set{temp_pos = value;}
+	}
+	public double[] Temp_quat{
+		get{return temp_quat;}
+		set{temp_quat = value;}
+	}
 
 	protected void initializeReports ()
 	{
@@ -220,52 +242,67 @@ public class Device{
 	}
 
 
-
-
-	public void ReportPos(VRPNReport rep){
-
+	public void ReportPos(double[] pos,double[] quat){
+		
+		
+		
+		//Debug.Log ((float)pos[0] + "  " + (float)pos[1] + "  "+ (float)pos[2]);
+		
+		
 		if(!trackerInitialized){
-			trackerInitPos.x = (float)rep.pos [0] * coef.x;
-			trackerInitPos.y = (float)rep.pos [1] * coef.y;
-			trackerInitPos.z = -(float)rep.pos [2] * coef.z;
-			trackerInitQuat.x = -(float)rep.quat [0];
-			trackerInitQuat.y = -(float)rep.quat [1];
-			trackerInitQuat.z = (float)rep.quat [2];
-			trackerInitQuat.w = (float)rep.quat [3];
+			trackerInitPos.x = (float)pos [0] * coef.x;
+			trackerInitPos.y = (float)pos [1] * coef.y;
+			trackerInitPos.z = -(float)pos [2] * coef.z;
+			trackerInitQuat.x = -(float)quat [0];
+			trackerInitQuat.y = -(float)quat [1];
+			trackerInitQuat.z = (float)quat [2];
+			trackerInitQuat.w = (float)quat [3];
 			trackerInitialized=true;
 			
 			
 		}
 		// Store position in a Vector3
-		trackerPos.x = (float)rep.pos [0] * coef.x;
-		trackerPos.y = (float)rep.pos [1] * coef.y;
-		trackerPos.z = -(float)rep.pos [2] * coef.z;
-		trackerQuat.x = -(float)rep.quat [0];
-		trackerQuat.y = -(float)rep.quat [1];
-		trackerQuat.z = (float)rep.quat [2];
-		trackerQuat.w = (float)rep.quat [3];
+		trackerPos.x = (float)pos [0] * coef.x;
+		trackerPos.y = (float)pos [1] * coef.y;
+		trackerPos.z = -(float)pos [2] * coef.z;
+		trackerQuat.x = -(float)quat [0];
+		trackerQuat.y = -(float)quat [1];
+		trackerQuat.z = (float)quat [2];
+		trackerQuat.w = (float)quat [3];
 		
 		obj.transform.localRotation = initRot*Quaternion.Inverse(trackerInitQuat)*trackerQuat;
-		//obj.transform.localRotation
+		
 		obj.transform.localPosition = (trackerPos-trackerInitPos)+initPos;
+		
+		
+		
+	}
 
 
+
+
+	public void ReportPos(VRPNReport rep){
+		ReportPos (rep.pos, rep.quat);
 
 	}
 
+	public void ReportVel(double[] vel){
+
+		trackerVelocity.x = (float)vel[0];
+		trackerVelocity.y = (float)vel[1];
+		trackerVelocity.z = -(float)vel[2];
+
+	}
 	public void ReportVel(VRPNReport rep){
-
-		trackerVelocity.x = (float)rep.pos[0];
-		trackerVelocity.y = (float)rep.pos[1];
-		trackerVelocity.z = -(float)rep.pos[2];
-
+		ReportVel (rep.pos);
 	}
+
 
 	public void ReportButtons(VRPNButtonReport brep){
 
 			
-			
-			
+		Debug.Log (brep.button + " " + brep.state);
+		          
 			if(brep.button == 0 && brep.state == 1)
 			{
 				
@@ -343,6 +380,9 @@ public class VRPN : MonoBehaviour {
 	/// <description>Fill the <paramref name="rep">rep structure</paramref> with data for the given <paramref name="name">device</paramref></description>
 	[DllImport ("UnityVRPN")]
 	private static extern void VRPNTrackerPosReport(string name, [In,Out] IntPtr rep, [Out] IntPtr ts, int sensor = 0);
+
+	[DllImport ("UnityVRPN")]
+	private static extern void VRPNTrackerPosReportAlt(string name, [In,Out] double[] pos, [In,Out] double[] quat, [Out] IntPtr ts, int sensor = 0);
 	
 	/// <summary>
 	/// VRPNTrackerNumPosReports wrapper API function
@@ -364,7 +404,9 @@ public class VRPN : MonoBehaviour {
 	private static extern void VRPNTrackerPosReports(string name, [In,Out] IntPtr[] repsPtr, [In,Out] ref int nmbr);
 	
 	[DllImport ("UnityVRPN")]
-	private static extern void VRPNTrackerVelReport(string name, [In,Out] IntPtr report, IntPtr ts, int sensor = 0);
+	private static extern void VRPNTrackerVelReport(string name,  [In,Out] IntPtr report, IntPtr ts, int sensor = 0);
+	[DllImport ("UnityVRPN")]
+	private static extern void VRPNTrackerVelReportAlt(string name,  [In,Out] double[] vel, IntPtr ts, int sensor = 0);
 	
 	[DllImport ("UnityVRPN")]
 	private static extern void VRPNForceFeedbackInit(string name);
@@ -486,17 +528,20 @@ public class VRPN : MonoBehaviour {
 				VRPNReport rep;
 				if (VRPNTrackerNumPosReports (devices[i].Name) > 0) {
 					
-					
-					//VRPNTrackerPosReports("Phantom",reports,ref num);
-					VRPNTrackerPosReport (devices[i].Name, devices[i].TrackReport, IntPtr.Zero, 0);
-					//rep = (VRPNReport)Marshal.PtrToStructure(reports[0], typeof(VRPNReport));
-					rep = (VRPNReport)Marshal.PtrToStructure (devices[i].TrackReport, typeof(VRPNReport));
-					devices[i].ReportPos(rep);
+					#if !UNITY_STANDALONE_LINUX
+
+					#endif
+
+					//VRPNTrackerPosReport (devices[i].Name, devices[i].TrackReport, IntPtr.Zero, 0);
+					//rep = (VRPNReport)Marshal.PtrToStructure (devices[i].TrackReport, typeof(VRPNReport));
+					VRPNTrackerPosReportAlt (devices[i].Name,devices[i].Temp_pos,devices[i].Temp_quat, IntPtr.Zero, 0);
+
+					devices[i].ReportPos(devices[i].Temp_pos,devices[i].Temp_quat);
 				}
-				
-				VRPNTrackerVelReport(devices[i].Name, devices[i].VelReport, IntPtr.Zero, 0);
-				rep = (VRPNReport)Marshal.PtrToStructure(devices[i].VelReport, typeof(VRPNReport));
-				devices[i].ReportVel(rep);
+				VRPNTrackerVelReportAlt(devices[i].Name,devices[i].Temp_pos, IntPtr.Zero, 0);
+				//VRPNTrackerVelReport(devices[i].Name, devices[i].VelReport, IntPtr.Zero, 0);
+				//rep = (VRPNReport)Marshal.PtrToStructure(devices[i].VelReport, typeof(VRPNReport));
+				devices[i].ReportVel(devices[i].Temp_pos);
 				
 				
 				
@@ -574,6 +619,7 @@ public class VRPN : MonoBehaviour {
 			serverStarted = false;
 			//obj.SetActive(false);
 			for (int j=0; j<devices.Count; j++) {
+
 				Marshal.FreeHGlobal (devices[j].TrackReport);
 
 				Marshal.FreeHGlobal (devices[j].VelReport);
