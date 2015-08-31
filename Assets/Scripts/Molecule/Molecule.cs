@@ -8,27 +8,6 @@ using System.Runtime.InteropServices;
 namespace MoleculeData{
 
 
-	 public  class Element{
-		public string name;
-		public float mass;
-		public float radius;
-
-
-		public Element(string n,float m,float r){
-			name = n;
-			mass = m;
-			radius = r;
-		}
-
-	}
-
-	//static const List<Element> table = {new Element("H",1.00794f,1.2f),new Element("He",4.00260,1.40f),new Element("Li",6.941,1.82f)};
-
-
-
-
-
-
 
 	public abstract class Mol_Object {
 
@@ -39,10 +18,13 @@ namespace MoleculeData{
 		protected Material objMaterial;
 		protected bool active;
 		protected bool[] selected;
-
+		private Vector3[] minValue; 
+		private Vector3[] maxValue;
 		protected Mol_Object(){
 
 			location = new Vector3[Main.MAX_FRAMES];
+			maxValue = new Vector3[Main.MAX_FRAMES];
+			minValue = new Vector3[Main.MAX_FRAMES];
 			gameobject = new GameObject[Main.MAX_FRAMES];
 			active =false;
 			selected =new bool[Main.MAX_NUM_DEVICES];
@@ -54,6 +36,10 @@ namespace MoleculeData{
 		protected Mol_Object(Mol_Object m){
 			location = new Vector3[Main.MAX_FRAMES];
 			m.location.CopyTo(location,0);
+			maxValue = new Vector3[Main.MAX_FRAMES];
+			m.maxValue.CopyTo(maxValue,0);
+			minValue = new Vector3[Main.MAX_FRAMES];
+			m.minValue.CopyTo(minValue,0);
 
 			gameobject = new GameObject[Main.MAX_FRAMES];
 			m.gameobject.CopyTo(gameobject,0);
@@ -71,6 +57,17 @@ namespace MoleculeData{
 			get{return location;} 
 			set{ location = value; }
 		}
+
+		public Vector3[] MinValue{
+			get{return minValue;}
+			set{minValue = value;}
+		} 
+		
+		public Vector3[] MaxValue{
+			get{return maxValue;}
+			set{maxValue = value;}
+		} 
+
 
 		public Color ObjColor{
 			get{return objColor;}
@@ -256,13 +253,14 @@ namespace MoleculeData{
 		private string resName;
 		private int resID;
 		private Chain resChain;
+		private int number;
 
 		public Residue():base(){
 		}
 
 
-		public Residue(string resname,int resid,Chain c):base(){
-
+		public Residue(string resname,int num,int resid,Chain c):base(){
+			number = num;
 			resName = resname;
 			resID = resid;
 			atoms = new List<Atom> ();
@@ -272,7 +270,7 @@ namespace MoleculeData{
 
 		public Residue(Residue r,Chain c): base(r){
 
-
+			number = r.number;
 			atoms = new List<Atom>();
 			resName =r.resName;
 			resID = r.resID;
@@ -285,21 +283,32 @@ namespace MoleculeData{
 
 
 
+
 		public void CalculateCenter(){
 			
-
+			Vector3 minPoint= new Vector3(float.MaxValue,float.MaxValue,float.MaxValue);
+			Vector3 maxPoint= new Vector3(float.MinValue,float.MinValue,float.MinValue);
 			Vector3 bary = Vector3.zero;
 			
 			for (int i=0; i<Atoms.Count; i++) {	
 				Vector3 position = Atoms [i].Location[Main.current_frame];
+				minPoint = Vector3.Min (minPoint, position);
+				maxPoint = Vector3.Max (maxPoint, position);
 				bary = bary + (new Vector3 (position [0], position [1], position [2]));
 
 			}
 
 			location[Main.current_frame] = bary/Atoms.Count;
-			
+			MinValue[Main.current_frame] = minPoint;
+			MaxValue[Main.current_frame] = maxPoint;
 			
 		}
+
+
+
+
+
+
 
 		public void SetActive(bool b){
 			active = b;
@@ -333,6 +342,11 @@ namespace MoleculeData{
 			get{return atoms;}
 			set{atoms = value;}
 
+		}
+
+		public int Number{
+			get{return number;}
+			set{number = value;}
 		}
 
 	}
@@ -370,23 +384,34 @@ namespace MoleculeData{
 
 
 		public void CalculateCenter(){
-
+			Vector3 minPoint= new Vector3(float.MaxValue,float.MaxValue,float.MaxValue);
+			Vector3 maxPoint= new Vector3(float.MinValue,float.MinValue,float.MinValue);
 			Vector3 bary = Vector3.zero;
 			
 			for (int i=0; i<Residues.Count; i++) {
 				for (int j=0; j<Residues[i].Atoms.Count; j++) {
 
 					Vector3 position = Residues [i].Atoms [j].Location[Main.current_frame];
-
+					
+					minPoint = Vector3.Min (minPoint, position);
+					maxPoint = Vector3.Max (maxPoint, position);
 					bary = bary + (new Vector3 (position [0], position [1], position [2]));
 
 				}
 			}
 
 			location[Main.current_frame] = bary/atoms.Count;
-
+			MinValue[Main.current_frame] = minPoint;
+			MaxValue[Main.current_frame] = maxPoint;
 			
 		}
+
+		
+
+
+
+
+
 
 
 		public void SetActive(bool b){
@@ -499,8 +524,7 @@ namespace MoleculeData{
 		private List<Residue> residues;
 		private List<Atom> atoms;
 
-		private Vector3 minValue; 
-		private Vector3 maxValue;
+
 
 
 		private List<int[]> bonds;
@@ -520,15 +544,13 @@ namespace MoleculeData{
 			chains = new List<Chain> ();
 			residues = new List<Residue> ();
 			atoms = new List<Atom> ();
-			minValue =new Vector3 (0, 0, 0);
-			maxValue = new Vector3 (0, 0, 0);
 			bonds = new List<int[]> ();
 			chainsBonds = new List<List<int>> ();
 
 
 		}
 
-		public Molecule(Molecule m){
+		public Molecule(Molecule m) : base(m){
 
 
 			chains = new List<Chain> ();
@@ -571,8 +593,6 @@ namespace MoleculeData{
 
 			bonds = new List<int[]> (m.Bonds);
 			chainsBonds = new List<List<int>> (m.chainsBonds);
-			minValue =m.MinValue;
-			maxValue = m.MaxValue;
 
 			color = m.color;
 			type = m.type;
@@ -643,15 +663,7 @@ namespace MoleculeData{
 
 
 
-		public Vector3 MinValue{
-			get{return minValue;}
-			set{minValue = value;}
-		} 
 
-		public Vector3 MaxValue{
-			get{return maxValue;}
-			set{maxValue = value;}
-		} 
 
 
 
@@ -688,8 +700,8 @@ namespace MoleculeData{
 
 			//Debug.Log("centerPoint:"+location + " min/max " + minPoint + "/" + maxPoint);
 
-			MinValue = minPoint;
-			MaxValue = maxPoint;
+			MinValue[Main.current_frame] = minPoint;
+			MaxValue[Main.current_frame] = maxPoint;
 
 
 		}
@@ -726,7 +738,7 @@ namespace MoleculeData{
 
 
 
-
+		//enough for <50000 atoms
 		public void CalculateBonds(){
 			string type1, type2;
 			Atom atom_a, atom_b;
@@ -742,7 +754,7 @@ namespace MoleculeData{
 				atom_a = Atoms [i];
 				type1 = atom_a.AtomName;
 
-				//we need to find a better way to do this
+
 				for (int j=i+1; j<i+50 && j<Atoms.Count; j++) {
 
 
@@ -753,7 +765,7 @@ namespace MoleculeData{
 						continue;
 
 					if (Vector3.Distance (atom_a.Location[Main.current_frame], atom_b.Location[Main.current_frame]) <= cutoff) {
-
+					
 						if (type1 == "H") {
 
 							if (atom_a.Bonds.Count == 0) {
@@ -801,13 +813,104 @@ namespace MoleculeData{
 
 		}
 
+
+		//More accurate but takes time
+		public void CalculateBonds2(){
+			string type1, type2;
+			Atom atom_a, atom_b;
+			float cutoff =0.0f;
+			float[] dist =new float[Residues.Count];
+
+			for (int i=0; i<Atoms.Count; i++) {  
+				float rad = Atoms[i].AtomRadius;
+				if (rad > cutoff) cutoff = rad;
+			}
+
+		
+
+			for (int i=0; i<Atoms.Count; i++) {
+				int rescount = i+1;
+				atom_a = Atoms [i];
+				type1 = atom_a.AtomName;
+
+				for (int j=atom_a.AtomResidue.Number; j<atom_a.AtomResidue.Number+2 && j<Residues.Count; j++) {
+
+						for (int k=rescount; k<Residues[j].Atoms.Count+rescount && k< Atoms.Count; k++) {
+
+							atom_b = Atoms [k];
+							type2 = atom_b.AtomName;
+							
+							if ((type1 == "H") && (type2 == "H"))
+								continue;
+							
+							if (Vector3.Distance (atom_a.Location[Main.current_frame], atom_b.Location[Main.current_frame]) <= cutoff) {
+
+								if (type1 == "H") {
+									
+									if (atom_a.Bonds.Count == 0) {
+										
+										atom_a.Bonds.Add (atom_b.Number);
+										atom_b.Bonds.Add (atom_a.Number);
+										bonds.Add (new int[2]{atom_a.Number,atom_b.Number});
+									}
+									
+									
+									
+								} else if (type2 == "H") {
+									
+									if (atom_b.Bonds.Count == 0) {
+										
+										
+										atom_a.Bonds.Add (atom_b.Number);
+										atom_b.Bonds.Add (atom_a.Number);
+										bonds.Add (new int[2]{atom_a.Number,atom_b.Number});
+									}
+									
+									
+									
+								} else {
+									
+									atom_a.Bonds.Add (atom_b.Number);
+									atom_b.Bonds.Add (atom_a.Number);
+									bonds.Add (new int[2]{atom_a.Number,atom_b.Number});
+									
+								}
+								
+								
+								
+								
+								
+							}
+							
+							
+						}
+
+
+
+
+
+					
+
+					rescount+=Residues[j].Atoms.Count;
+				}
+
+			
+			}
+			
+			
+			Debug.Log("Bonds:"+bonds.Count);
+			
+			
+		}
+
+
 		public void Update(float[] temp){
 			
 			for (int i=0; i<Atoms.Count; i++) {
 
 				Vector3 tem = new Vector3 (-temp [i*3], temp [i*3+ 1], temp [i*3+2]);
 
-				Atoms[i].Location[Main.current_frame] = Vector3.Lerp (Atoms[i].Location[Main.current_frame], tem, 0.2f);;
+				Atoms[i].Location[Main.current_frame] = Vector3.Lerp (Atoms[i].Location[Main.current_frame], tem, 0.2f);
 
 			}
 				

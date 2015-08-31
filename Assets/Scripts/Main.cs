@@ -5,18 +5,25 @@ using System.Collections.Generic;
 using System.IO;
 using MoleculeData;
 using LoadData;
-
+using VRPNData;
 
 
 
 public class Main : MonoBehaviour {
 
-
-
+	public struct Options{
+		public bool activateBones;
+		public bool activateFakeCharges;
+		public bool activateV_sync;
+		public bool oldUnityObj;
+		public bool showFPS;
+	}
+	
 	private StreamReader sr;
 
 
 	//File path
+	static public Options options;
 	public MainUI ui;
 	public string molecule_file;
 	public string trajectory_file;
@@ -31,8 +38,20 @@ public class Main : MonoBehaviour {
 	public int end_frame =0;
 	#if UNITY_EDITOR
 	void Awake () {
-		QualitySettings.vSyncCount = 0;
-		//Application.targetFrameRate = -1;
+
+		options.activateBones = false;
+		options.activateFakeCharges = true;
+		options.activateV_sync = true;
+		options.oldUnityObj = false;
+		options.showFPS = true;
+		if (options.activateV_sync) {
+			QualitySettings.vSyncCount = 1;
+		} else {
+			QualitySettings.vSyncCount = 0;
+			Application.targetFrameRate = -1;
+
+		}
+	
 			
 	}
 	#endif
@@ -45,45 +64,33 @@ public class Main : MonoBehaviour {
 
 
 		LoadFile (molecule_file);
+
 		LoadFile (trajectory_file);
 
 	
 
 		molecules[0].CalculateCenters();
+
 		molecules[0].CalculateChains ();
+		float t = Time.realtimeSinceStartup;
 		molecules[0].CalculateBonds();
+		Debug.Log ("Time to calculate Bonds : " +(Time.realtimeSinceStartup - t));
+
 		SetMolecule ("all",true);
 
-		ui.center = molecules[0].Location[0];
-		Camera.main.transform.localPosition = new Vector3 (molecules[0].Location[0].x, molecules[0].Location[0].y, /*target.z*/ - (Vector3.Distance (molecules[0].MaxValue, molecules[0].MinValue)));
+		ui.center = molecules[1].Location[0];
+		Camera.main.transform.localPosition = new Vector3 (molecules[1].Location[0].x, molecules[1].Location[0].y, /*target.z*/ - (Vector3.Distance (molecules[1].MaxValue[0], molecules[1].MinValue[0])));
 		SetColors (1);
 
 		mainMaterial = new Material(Resources.Load("Materials/UnityObj") as Material);
 		SetMaterials (1);
+
 		DisplayMolecules (1);
 
 
 	}
 
-	// Update is called once per frame
-	void Update () {
 
-		if (GetComponent<VRPN> ().ServerStarted) {
-
-			GetComponent<SelectAtoms> ().ClosestAtom(molecules[1],GetComponent<VRPN> ().Devices);
-			GetComponent<ApplyForces> ().setForceForAtomPosition ();
-
-				if(GetComponent<IMD>().IsIMDRunning())
-				{
-
-					GetComponent<ApplyForces> ().applyForcesVector();
-
-
-				}
-			
-		}
-	
-	}
 
 	public bool SetMolecule(string text,bool addMol,int currentMol =0){
 
@@ -208,7 +215,7 @@ public class Main : MonoBehaviour {
 
 						if ((mol.Chains [i].Type == "HETATM" && ((mol.Chains[i].Residues[j].ResName =="WAT") || (mol.Chains[i].Residues[j].ResName =="SOL") || (mol.Chains[i].Residues[j].ResName == "HOH"))) ^not) {
 
-							mol.Chains[i].SetActive (true);
+							//mol.Chains[i].SetActive (true);
 							mol.Chains[i].Residues[j].SetActive (true);
 
 							}
@@ -247,7 +254,7 @@ public class Main : MonoBehaviour {
 		}
 
 
-		Debug.Log (start_frame + " " +end_frame+ " "+ total_frames);
+		//Debug.Log (start_frame + " " +end_frame+ " "+ total_frames);
 
 	}
 
@@ -290,9 +297,11 @@ public class Main : MonoBehaviour {
 				break;
 			}
 
-			molecules [current_mol].Gameobject[i].GetComponent<DisplayMolecule> ().Init (molecules [current_mol], mainMaterial,globalScale);
-			molecules [current_mol].Gameobject[i].GetComponent<DisplayMolecule> ().DisplayMol (molecules [current_mol].color, molecules [current_mol].type, i);
 
+			molecules [current_mol].Gameobject[i].GetComponent<DisplayMolecule> ().Init (molecules [current_mol], mainMaterial,globalScale);
+			float t = Time.realtimeSinceStartup;
+			molecules [current_mol].Gameobject[i].GetComponent<DisplayMolecule> ().DisplayMol (molecules [current_mol].color, molecules [current_mol].type, i);
+			Debug.Log ("Time to render : " + (Time.realtimeSinceStartup - t));
 			//molecules [i].molecule.GetComponent<DisplayMolecule>().SetColors(ColorDisplay.Name);
 		
 
@@ -482,11 +491,11 @@ public class Main : MonoBehaviour {
 				molecules.Add (ReadFiles.ReadGRO (sr));
 				sr.Close ();
 				break;
-			case "mol2": 
-				sr = new StreamReader (s);
+			//case "mol2": 
+			//	sr = new StreamReader (s);
 			//molecules.Add(ReadFiles.ReadMOL2 (sr));
-				sr.Close ();
-				break;
+			//	sr.Close ();
+			//	break;
 			case "xtc": 
 				ReadFiles.ReadXTC (s, molecules [0]);
 				break;

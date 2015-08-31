@@ -6,38 +6,74 @@ using System.Linq;
 using System.Collections.Generic;
 using MoleculeData;
 
+
+/// <summary>
+/// IMD class
+/// </summary>
+/// <description>Manages the connection between the simulation server and the Unity main application</description>
 public class IMD : MonoBehaviour {
 
 
-	
-	//Lets make our calls from the Plugin
+	/// <summary>
+	/// Connection to a server
+	/// </summary>
+	/// <param name="hostname">Server address</param>
+	/// <param name="port">Server port </param>
+	/// <description>Connects to the given server</description>
 	[DllImport ("imd-unity")]
 	private static extern void IMD_init(string hostname, int port);
-	
-	[DllImport ("imd-unity")]
-	private static extern int IMD_start();
-	
+	/// <summary>
+	///  Stop the IMD simulation
+	/// </summary>
+	/// <description>Send a signal to stop the simulation and cuts the connection</description>
 	[DllImport ("imd-unity")]
 	private static extern int IMD_stop();
-	
+	/// <summary>
+	/// Is IMD Connected ?
+	/// </summary>
+	/// <description>Checks if there is a connection opened</description>
 	[DllImport ("imd-unity")]
 	private static extern bool IMD_isConnected();	
-	
+
+	/// <summary>
+	/// Set number of atoms
+	/// </summary>
+	/// <description>Set the number of atoms used in the simulation</description>
 	[DllImport ("imd-unity")]
 	private static extern void IMD_setNbParticles(int nbParticles);
-	
+
+	/// <summary>
+	/// Pauses the simulation
+	/// </summary>
 	[DllImport ("imd-unity")]
 	private static extern void IMD_pause();
 	
 	[DllImport ("imd-unity")]
 	private static extern void IMD_play();
-	
+
+	/// <summary>
+	/// Set the forces
+	/// </summary>
+	/// <param name="nbforces">Number of atoms to apply the forces</param>
+	/// <param name="atomslist">list of the atoms id to apply the forces</param>
+	/// <param name="forceslist">list of the forces to apply to each atom</param>
+	/// <description>Set the forces to be applied to the atoms</description>
 	[DllImport ("imd-unity")]
 	private static extern void IMD_setForces(int nbforces, int[] atomslist, float[] forceslist);
+
 	
+	/// <summary>
+	/// Reset forces
+	/// </summary>
+	/// <description>Set the forces applied of all atoms to zero</description>
 	[DllImport ("imd-unity")]
 	private static extern void IMD_resetForces();
-	
+
+	/// <summary>
+	/// Get the data of the simulation
+	/// </summary>
+	/// <param name="verts">List of the atoms positions</param>
+	/// <param name="energies">System energies</param>
 	[DllImport ("imd-unity")]
 	private static extern void IMD_getThings([In, Out] float[] verts,[In, Out] ref IMDEnergies energies);
 	

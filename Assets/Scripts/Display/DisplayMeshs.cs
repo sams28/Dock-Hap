@@ -364,15 +364,6 @@ public class DisplayMeshs : DisplayMolecule {
 
 
 
-
-
-
-
-
-
-
-
-
 	
 	public void DisplayMolSurface() {
 
@@ -401,19 +392,19 @@ public class DisplayMeshs : DisplayMolecule {
 			}
 		}
 		float resolution = CapResolution (nbatoms);
-
+		//Debug.Log (frame);
 		//The size of voxel array. Be carefull not to make it to large as a mesh in unity can only be made up of 65000 verts
-		int X = (int)(((mol.MaxValue.x - mol.MinValue.x ) * resolution) + 13);
-		int Y = (int)(((mol.MaxValue.y - mol.MinValue.y ) * resolution) + 13);
-		int Z = (int)(((mol.MaxValue.z - mol.MinValue.z ) * resolution) + 13);
+		int X = (int)(((mol.MaxValue[frame].x - mol.MinValue[frame].x ) * resolution) + 13);
+		int Y = (int)(((mol.MaxValue[frame].y - mol.MinValue[frame].y ) * resolution) + 13);
+		int Z = (int)(((mol.MaxValue[frame].z - mol.MinValue[frame].z ) * resolution) + 13);
 		//correspond to the number vertices in a cube
 		int fudgeFactor = 8;
 
-		Vector3 offset = mol.MinValue - (new Vector3 (fudgeFactor, fudgeFactor, fudgeFactor)) / resolution;
+		Vector3 offset = mol.MinValue[frame] - (new Vector3 (fudgeFactor, fudgeFactor, fudgeFactor)) / resolution;
 
 		//Debug.Log("Density minValue :: " + resolution);
-		Debug.Log("Density point X,Y,Z :: "+ X+","+Y+","+Z);
-		Debug.Log("Density minValue :: " + mol.MinValue);
+		//Debug.Log("Density point X,Y,Z :: "+ X+","+Y+","+Z);
+		//Debug.Log("Density minValue :: " + mol.MinValue[frame]);
 
 		
 		float[,,] gridS = new float[X,Y,Z];
@@ -421,11 +412,14 @@ public class DisplayMeshs : DisplayMolecule {
 		//int[,,][] ids = new int[X,Y,Z][10];
 		List<Mesh> mesh = new List<Mesh>();
 
-		bones = new List<Transform>();
-		List<Vector3> pos_bones= new List<Vector3>();
-		List<Matrix4x4> bindPoses = new List<Matrix4x4>();
 
-		
+		bones = new List<Transform> ();
+		List<Vector3> pos_bones = new List<Vector3> ();
+		List<Matrix4x4> bindPoses = new List<Matrix4x4> ();
+
+		GameObject  bones_g = new GameObject ("bones");;
+		bones_g.transform.SetParent (this.transform, false);
+
 		Vector3 delta = new Vector3 (resolution, resolution, resolution); //resolution
 		
 		// We need to refresh the molecule's origin when it's not
@@ -444,13 +438,14 @@ public class DisplayMeshs : DisplayMolecule {
 		Color atomColor;
 		float atomRadius;
 		float density;
-		GameObject bones_g = new GameObject ("bones");
-		bones_g.transform.SetParent (this.transform, false);
+
 		for (int o=0; o<mol.Atoms.Count; o++) {
 
 
 			if (mol.Atoms [o].Active) {
 
+
+				if (Main.options.activateBones) {
 				Transform tr = new GameObject(mol.Atoms [o].AtomName).transform;
 				tr.parent = bones_g.transform;
 				tr.localRotation = Quaternion.identity;
@@ -458,11 +453,11 @@ public class DisplayMeshs : DisplayMolecule {
 				bones.Add(tr);
 				pos_bones.Add(tr.localPosition);
 				bindPoses.Add(tr.worldToLocalMatrix * mol.Gameobject[frame].transform.localToWorldMatrix);
+				}
 
-
-				i = Mathf.RoundToInt ((mol.Atoms [o].Location[frame].x - mol.MinValue.x) * delta.x + fudgeFactor);
-				j = Mathf.RoundToInt ((mol.Atoms [o].Location[frame].y - mol.MinValue.y) * delta.y + fudgeFactor);
-				k = Mathf.RoundToInt ((mol.Atoms [o].Location[frame].z - mol.MinValue.z) * delta.z + fudgeFactor);
+				i = Mathf.RoundToInt ((mol.Atoms [o].Location[frame].x - mol.MinValue[frame].x) * delta.x + fudgeFactor);
+				j = Mathf.RoundToInt ((mol.Atoms [o].Location[frame].y - mol.MinValue[frame].y) * delta.y + fudgeFactor);
+				k = Mathf.RoundToInt ((mol.Atoms [o].Location[frame].z - mol.MinValue[frame].z) * delta.z + fudgeFactor);
 				Vector3 v1 = new Vector3 (i, j, k);
 				
 				atomRadius = mol.Atoms [o].AtomRadius;
@@ -493,40 +488,40 @@ public class DisplayMeshs : DisplayMolecule {
 
 		mesh = MarchingCubes.CreateMesh(gridS,VertColor);
 
-		float t = Time.realtimeSinceStartup;
+
 		//Bones
 
+		if (Main.options.activateBones) {
+
+			for (int l=0; l<mesh.Count; l++) {
 
 
-		for (int l=0; l<mesh.Count; l++) {
+				Vector3[] v = mesh [l].vertices;
+				int threshold = mesh [l].vertexCount / 16;
+				ManualResetEvent[] doneEvents = new ManualResetEvent[16];
+				WorkChunk[] workChunks = new WorkChunk[16];
+				BoneWeight[] bonesWeight = new BoneWeight[mesh [l].vertexCount];
 
-
-			Vector3[] v = mesh[l].vertices;
-			int threshold = mesh[l].vertexCount/16;
-			ManualResetEvent[] doneEvents= new ManualResetEvent[16];
-			WorkChunk[] workChunks = new WorkChunk[16];
-			BoneWeight[] bonesWeight = new BoneWeight[mesh[l].vertexCount];
-
-			for (int w = 0; w < doneEvents.Length; w++) {
-				workChunks[w] = new WorkChunk(v,bones.Count,bonesWeight,resolution,offset,pos_bones,w*threshold,(w+1)*threshold);
-				doneEvents[w] = workChunks[w].doneEvent;
-			}
+				for (int w = 0; w < doneEvents.Length; w++) {
+					workChunks [w] = new WorkChunk (v, bones.Count, bonesWeight, resolution, offset, pos_bones, w * threshold, (w + 1) * threshold);
+					doneEvents [w] = workChunks [w].doneEvent;
+				}
 	
 
 			
-			for (int w = 0; w < doneEvents.Length; w++) {
-				doneEvents[w].Reset();
-				ThreadPool.QueueUserWorkItem(workChunks[w].CalculateBones);
+				for (int w = 0; w < doneEvents.Length; w++) {
+					doneEvents [w].Reset ();
+					ThreadPool.QueueUserWorkItem (workChunks [w].CalculateBones);
 				
+				}
+
+				WaitHandle.WaitAll (doneEvents);
+				mesh [l].boneWeights = bonesWeight;
+				mesh [l].bindposes = bindPoses.ToArray ();
+
 			}
-
-			WaitHandle.WaitAll (doneEvents);
-			mesh[l].boneWeights = bonesWeight;
-			mesh[l].bindposes = bindPoses.ToArray();
-
 		}
 
-		Debug.Log (Time.realtimeSinceStartup - t);
 		//Normals
 
 
@@ -567,28 +562,28 @@ public class DisplayMeshs : DisplayMolecule {
 			m_mesh[s] = new GameObject();
 			m_mesh[s].transform.SetParent(this.transform,false);
 
-
-			/*
+			if (!Main.options.activateBones) {
+			m_mesh[s].transform.localPosition = offset;
+			m_mesh[s].transform.localScale /= resolution;
 			m_mesh[s].AddComponent<MeshFilter>();
 			m_mesh[s].AddComponent<MeshRenderer>();
 			m_mesh[s].GetComponent<MeshFilter>().mesh = mesh[s];
 			m_mesh[s].GetComponent<MeshRenderer>().material= Resources.Load("Materials/Surface") as Material;
-			*/
 
+			}
+			else{
 			m_mesh[s].AddComponent<SkinnedMeshRenderer>();
 			rend[s] = m_mesh[s].GetComponent<SkinnedMeshRenderer>();
 			rend[s].bones = bones.ToArray();
 			rend[s].sharedMesh = mesh[s];
 			rend[s].material = Resources.Load("Materials/Surface") as Material;
-
+			}
 			
 		}
 
 
-
-
-
 	}
+
 
 	struct WorkChunk
 	{

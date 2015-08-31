@@ -83,12 +83,15 @@ public abstract class DisplayMolecule : MonoBehaviour {
 
 		case ColorDisplay.Name: return a.ObjColor;
 		case ColorDisplay.Charges:
-			if(a.AtomCharge >= 0){
+			/*if(a.AtomCharge >= 0){
 				return (new Color((a.AtomCharge)/maxCharges,0f,1f,1f));
 			}
 			else{
 				return(new Color((a.AtomCharge)/-minCharges,0f,1f,1f));
 			}
+			*/
+			return(new Color(UnityEngine.Random.Range(0f,1f),0f,1f,1f));
+
 		case ColorDisplay.ResName: return a.AtomResidue.ObjColor;
 		case ColorDisplay.ResID:  return a.AtomResidue.ObjColor;
 		case ColorDisplay.ChainID:return a.AtomChain.ObjColor;
@@ -108,7 +111,7 @@ public abstract class DisplayMolecule : MonoBehaviour {
 		case ColorDisplay.Name: return a.ObjMaterial;
 		case ColorDisplay.Charges:
 			Material m =new Material(mat);
-			if(a.AtomCharge >= 0){
+			/*if(a.AtomCharge >= 0){
 
 				m.color = (new Color((a.AtomCharge)/maxCharges,0f,1f,1f));
 				return m;
@@ -116,7 +119,9 @@ public abstract class DisplayMolecule : MonoBehaviour {
 			else{
 				m.color =(new Color((a.AtomCharge)/-minCharges,0f,1f,1f));
 				return m;
-			}
+			}*/
+			m.color =new Color(UnityEngine.Random.Range(0f,1f),0f,1f,1f);
+			return m;
 		case ColorDisplay.ResName: return a.AtomResidue.ObjMaterial;
 		case ColorDisplay.ResID:  return a.AtomResidue.ObjMaterial;
 		case ColorDisplay.ChainID:return a.AtomChain.ObjMaterial;

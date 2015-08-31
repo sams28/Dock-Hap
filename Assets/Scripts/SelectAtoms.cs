@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using MoleculeData;
-
+using VRPNData;
 
 
 
@@ -229,8 +229,7 @@ public class SelectAtoms : MonoBehaviour {
 
 	private List<Select> selects;
 	private VRPN vrpn;
-
-
+	private List<Molecule> mol;
 	public List<Select> Selects{
 		get{return selects;}
 		set{selects = value;}
@@ -249,13 +248,13 @@ public class SelectAtoms : MonoBehaviour {
 	public void Init(){
 
 		selects = new List<Select> ();
-
+		mol = GetComponent<Main>().molecules;
 		for (int i =0; i<vrpn.Devices.Count; i++) {
 
 			Select s= new Select();
 
 
-			s.g = (GameObject)Instantiate (Resources.Load("Prefabs/halo") as GameObject, GetComponent<Main>().molecules[0].Location[Main.current_frame], Quaternion.identity);
+			s.g = (GameObject)Instantiate (Resources.Load("Prefabs/halo") as GameObject, mol[0].Location[Main.current_frame], Quaternion.identity);
 			//necessary for particles
 			s.g.transform.SetParent (Camera.main.transform);
 
@@ -271,12 +270,12 @@ public class SelectAtoms : MonoBehaviour {
 
 
 
-	public void ClosestAtom(Molecule m,List<Device> d){
+	public void ClosestAtom(List<Device> d){
 
 		for (int i =0; i<selects.Count; i++) {
 
-			selects[i].SetClosestElements(m,d[i].obj);
-			selects[i].SetParticles(m,d[i].c);
+			selects[i].SetClosestElements(mol[MainUI.current_mol],d[i].obj);
+			selects[i].SetParticles(mol[MainUI.current_mol],d[i].c);
 
 		}
 
@@ -445,7 +444,7 @@ public class SelectAtoms : MonoBehaviour {
 					float timeDiff = Time.realtimeSinceStartup - selects[i].LastPressedTime;
 
 					if (timeDiff < 0.2f) {
-						SetSelect (GetComponent<Main>().molecules [1].select,i);
+						SetSelect (GetComponent<Main>().molecules [MainUI.current_mol].select,i);
 
 					
 					}

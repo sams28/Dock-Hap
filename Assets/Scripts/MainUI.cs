@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using MoleculeData;
 using System.Collections;
 using System.Collections.Generic;
-
+using VRPNData;
 
 
 
@@ -74,7 +74,7 @@ public class MainUI : MonoBehaviour {
 
 
 	private Camera canvasCamera;
-	private bool openMenu,showFPS, typeMenu,colorMenu;
+	private bool openMenu, typeMenu,colorMenu,optionsMenu;
 	private List<SubMenu> subMenus;
 	private ColorDisplay color;
 	private TypeDisplay type;
@@ -84,7 +84,7 @@ public class MainUI : MonoBehaviour {
 	public GameObject contents;
 
 
-	private int current_mol;
+	static public int current_mol;
 	private List<GameObject> labels_mol;
 	private GameObject start;
 	private GameObject menu;
@@ -94,7 +94,6 @@ public class MainUI : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 
-		showFPS = true;
 		openMenu=false;
 
 		labels_mol = new List<GameObject> ();
@@ -102,7 +101,6 @@ public class MainUI : MonoBehaviour {
 		start = transform.FindChild ("Start").gameObject;
 		menu = transform.FindChild ("Menu").gameObject;
 		perm = transform.FindChild ("Permanent").gameObject;
-		perm.transform.FindChild ("FPS").gameObject.SetActive(showFPS);
 		axes = perm.transform.FindChild ("Axe").FindChild ("axes");
 		prefab_toggle = (Resources.Load ("Prefabs/Toggle_content") as GameObject);
 
@@ -114,7 +112,7 @@ public class MainUI : MonoBehaviour {
 		subMenus.Add(new SubMenu(menu.transform.FindChild("VRPN").gameObject));
 		subMenus.Add(new SubMenu(menu.transform.FindChild("IMD").gameObject));
 		subMenus.Add(new SubMenu(menu.transform.FindChild("Select").gameObject));
-
+		subMenus.Add(new SubMenu(menu.transform.FindChild("Options").gameObject));
 
 		GameObject c = (GameObject)Instantiate (prefab_toggle,new Vector3(0,prefab_toggle.transform.localPosition.y,0), Quaternion.identity);
 		c.GetComponent<Toggle> ().isOn = true;
@@ -441,10 +439,46 @@ public class MainUI : MonoBehaviour {
 
 	public void ShowFPS()
 	{
-		showFPS = !showFPS;
+		Main.options.showFPS = !Main.options.showFPS;
+		subMenus.Find (x => x.Name == "Options").Elements.Find (x => x.name == "FPS_Toggle").GetComponent<Toggle>().isOn = Main.options.showFPS;
+		perm.transform.FindChild ("FPS").gameObject.SetActive(Main.options.showFPS);
 
-		perm.transform.FindChild ("FPS").gameObject.SetActive(showFPS);
+	}
 
+	public void UseOldUnityObj()
+	{
+		Main.options.oldUnityObj = !Main.options.oldUnityObj;
+		subMenus.Find (x => x.Name == "Options").Elements.Find (x => x.name == "UnityObj").GetComponent<Toggle>().isOn = Main.options.oldUnityObj;
+	}
+
+
+	public void UseVsync()
+	{
+		Main.options.activateV_sync = !Main.options.activateV_sync;
+		subMenus.Find (x => x.Name == "Options").Elements.Find (x => x.name == "V-sync").GetComponent<Toggle>().isOn = Main.options.activateV_sync;
+		if (Main.options.activateV_sync) {
+			QualitySettings.vSyncCount = 1;
+		} else {
+			QualitySettings.vSyncCount = 0;
+			Application.targetFrameRate = -1;
+			
+		}
+
+
+	}
+
+	public void UseFakeCharges()
+	{
+		Main.options.activateFakeCharges = !Main.options.activateFakeCharges;
+		subMenus.Find (x => x.Name == "Options").Elements.Find (x => x.name == "Charges").GetComponent<Toggle>().isOn = Main.options.activateFakeCharges;
+		
+	}
+
+	public void UseBones()
+	{
+		Main.options.activateBones = !Main.options.activateBones;
+		subMenus.Find (x => x.Name == "Options").Elements.Find (x => x.name == "Bones").GetComponent<Toggle>().isOn = Main.options.activateBones;
+		
 	}
 
 	public void ResetGame(){
@@ -476,10 +510,7 @@ public class MainUI : MonoBehaviour {
 	}
 */
 	public void MoveMolecule(bool menu){
-		
-		
-		
-		
+
 		bool b;
 		
 		

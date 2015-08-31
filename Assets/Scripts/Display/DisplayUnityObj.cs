@@ -52,12 +52,39 @@ public class DisplayUnityObj : DisplayMolecule {
 		color = c;
 		frame = f;
 		switch (t) {
-		case TypeDisplay.Points :  DisplayMolSpheres();break;
-		case TypeDisplay.VDW :  DisplayMolSpheres();break;
-		case TypeDisplay.Lines :  DisplayMolCylinders();break;
-		case TypeDisplay.CPK : DisplayMolSpheres();DisplayMolCylinders();break;
+		case TypeDisplay.Points :  
+			if(!Main.options.oldUnityObj)
+				DisplayMolSpheres();
+			else
+				DisplayMolSpheresOld();
+			break;
+		case TypeDisplay.VDW :  
+			if(!Main.options.oldUnityObj)
+			DisplayMolSpheres();
+			else
+				DisplayMolSpheresOld();
+			break;
+		case TypeDisplay.Lines :
+			if(!Main.options.oldUnityObj)
+				DisplayMolCylinders();
+			else
+				DisplayMolCylindersOld();
+			break;
+		case TypeDisplay.CPK : 
+			if(!Main.options.oldUnityObj){
+				DisplayMolSpheres();DisplayMolCylinders();
+			}
+			else{
+				DisplayMolSpheresOld();DisplayMolCylindersOld();
+			}
+			break;
 		case TypeDisplay.Trace :DisplayMolTubes();break;
-		default: DisplayMolSpheres();break;
+		default:
+			if(!Main.options.oldUnityObj)
+				DisplayMolSpheres();
+			else
+				DisplayMolSpheresOld();
+			break;
 		}
 	}
 
@@ -65,10 +92,32 @@ public class DisplayUnityObj : DisplayMolecule {
 	public override void UpdateMol(){
 		
 		switch(type){
-		case TypeDisplay.Points : UpdateAtoms();break;
-		case TypeDisplay.VDW : UpdateAtoms();break;
-		case TypeDisplay.Lines : UpdateBonds();break;
-		case TypeDisplay.CPK : UpdateAtoms();UpdateBonds();break;
+		case TypeDisplay.Points : 
+			if(!Main.options.oldUnityObj)
+				UpdateAtoms();
+			else
+				UpdateAtomsOld();
+			break;
+		case TypeDisplay.VDW : 
+			if(!Main.options.oldUnityObj)
+			UpdateAtoms();
+			else
+				UpdateAtomsOld();
+			break;
+		case TypeDisplay.Lines : 
+			if(!Main.options.oldUnityObj)
+				UpdateBonds();
+			else
+				UpdateBondsOld();
+			break;
+		case TypeDisplay.CPK : 
+			if(!Main.options.oldUnityObj){
+				UpdateAtoms();UpdateBonds();
+			}
+			else{
+				UpdateAtomsOld();UpdateBondsOld();
+			}
+			break;
 		case TypeDisplay.Trace : UpdateChains();break;
 		default:break;
 			
@@ -125,13 +174,13 @@ public class DisplayUnityObj : DisplayMolecule {
 				switch (type) {
 					case TypeDisplay.VDW : standard_gameobject.transform.localScale = new Vector3(scale,scale,scale)*mol.Atoms [i].AtomRadius;break;
 					case TypeDisplay.CPK : standard_gameobject.transform.localScale = new Vector3(scale,scale,scale)*0.25f*mol.Atoms [i].AtomRadius;break;
-					default : standard_gameobject.transform.localScale = new Vector3(scale,scale,scale)*0.5f;break;
+					default : standard_gameobject.transform.localScale = new Vector3(scale,scale,scale);break;
 				}
 				
 				
-				
+				Color c =	setColorAtm (mol.Atoms [i], color);
 				for(int j=0;j<m.vertexCount;j++)
-					colors[index*m.vertexCount+j] = setColorAtm (mol.Atoms [i], color);
+						colors[index*m.vertexCount+j] = c;
 				
 				
 				combine[index].mesh = m;
@@ -234,9 +283,11 @@ public class DisplayUnityObj : DisplayMolecule {
 					bonds.Add(new Bond(b1.transform));
 					bonds.Add(new Bond(b2.transform));
 
+					Color c1 =setColorAtm (mol.Atoms [mol.Bonds [i] [0]], color);
+					Color c2 = setColorAtm (mol.Atoms [mol.Bonds [i] [1]], color);
 					for(int j=0;j<m1.vertexCount;j++){
-						colors[index*2*m1.vertexCount+j] = setColorAtm (mol.Atoms [mol.Bonds [i] [0]], color);
-						colors[(index*2+1)*m1.vertexCount+j] = setColorAtm (mol.Atoms [mol.Bonds [i] [1]], color);
+						colors[index*2*m1.vertexCount+j] = c1;
+						colors[(index*2+1)*m1.vertexCount+j] = c2;
 					}
 
 
@@ -543,7 +594,7 @@ public class DisplayUnityObj : DisplayMolecule {
 
 
 	public void DisplayMolCylindersOld(){
-		bonds = new List<Bond> ();
+		chains = new List<Transform> ();
 		for (int i =0; i < mol.Bonds.Count; i++) {
 			
 			
