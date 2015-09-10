@@ -36,12 +36,12 @@ public class Main : MonoBehaviour {
 	static public int total_frames =1;
 	public int start_frame =0;
 	public int end_frame =0;
-	#if UNITY_EDITOR
+
 	void Awake () {
 
 		options.activateBones = false;
 		options.activateFakeCharges = true;
-		options.activateV_sync = true;
+		options.activateV_sync = false;
 		options.oldUnityObj = false;
 		options.showFPS = true;
 		if (options.activateV_sync) {
@@ -54,7 +54,6 @@ public class Main : MonoBehaviour {
 	
 			
 	}
-	#endif
 	
 	
 	//Initialize the system for a file
@@ -109,7 +108,19 @@ public class Main : MonoBehaviour {
 
 
 		}
-		mol.SetActive(false);
+
+
+		if (sl [0] == "not") {
+			
+			not = true;
+			
+		} else {
+			not = false;
+		}
+
+
+		mol.SetActive(not);
+
 		for (int ii =0; ii<sl.Length; ii++) {
 
 
@@ -122,8 +133,8 @@ public class Main : MonoBehaviour {
 
 			}
 
-			not=false;
 
+			/*
 			if(ii-1 >-1){
 
 				if(sl [ii-1] == "not"){
@@ -133,7 +144,7 @@ public class Main : MonoBehaviour {
 				}
 
 			}
-			
+			*/
 			switch (sl [ii]) {
 			case "chain":
 
@@ -143,9 +154,9 @@ public class Main : MonoBehaviour {
 
 				for (int i=0; i< mol.Chains.Count; i++) {
 
-					if ((mol.Chains [i].ChainID == sl [ii + 1]) ^not   ) {
+					if (mol.Chains [i].ChainID == sl [ii + 1]) {
 
-						mol.Chains [i].SetActive (true);
+						mol.Chains [i].SetActive (!not);
 
 					}
 
@@ -160,9 +171,9 @@ public class Main : MonoBehaviour {
 				
 				for (int i=0; i< mol.Residues.Count; i++) {
 					
-					if ((mol.Residues [i].ResName == sl [ii + 1]) ^not) {
+					if (mol.Residues [i].ResName == sl [ii + 1]) {
 						
-						mol.Residues [i].SetActive (true);
+						mol.Residues [i].SetActive (!not);
 						
 					}
 					
@@ -177,9 +188,9 @@ public class Main : MonoBehaviour {
 				
 				for (int i=0; i< mol.Atoms.Count; i++) {
 					
-					if ((mol.Atoms [i].AtomName == sl [ii + 1])^not) {
+					if (mol.Atoms [i].AtomName == sl [ii + 1]) {
 
-						mol.Atoms [i].Active = true;
+						mol.Atoms [i].Active = !not;
 						
 					}
 					
@@ -193,9 +204,9 @@ public class Main : MonoBehaviour {
 				
 				for (int i=0; i< mol.Chains.Count; i++) {
 					
-					if ((mol.Chains [i].Type == "HETATM" )^not) {
+					if (mol.Chains [i].Type == "HETATM" ) {
 						
-						mol.Chains [i].SetActive(true);
+						mol.Chains [i].SetActive(!not);
 						
 					}
 					
@@ -213,10 +224,10 @@ public class Main : MonoBehaviour {
 
 					for (int j=0; j< mol.Chains[i].Residues.Count; j++) {
 
-						if ((mol.Chains [i].Type == "HETATM" && ((mol.Chains[i].Residues[j].ResName =="WAT") || (mol.Chains[i].Residues[j].ResName =="SOL") || (mol.Chains[i].Residues[j].ResName == "HOH"))) ^not) {
+						if ((mol.Chains [i].Type == "HETATM" && (mol.Chains[i].Residues[j].ResName =="WAT") || (mol.Chains[i].Residues[j].ResName =="SOL") || (mol.Chains[i].Residues[j].ResName == "HOH"))) {
 
 							//mol.Chains[i].SetActive (true);
-							mol.Chains[i].Residues[j].SetActive (true);
+							mol.Chains[i].Residues[j].SetActive (!not);
 
 							}
 
@@ -301,7 +312,7 @@ public class Main : MonoBehaviour {
 			molecules [current_mol].Gameobject[i].GetComponent<DisplayMolecule> ().Init (molecules [current_mol], mainMaterial,globalScale);
 			float t = Time.realtimeSinceStartup;
 			molecules [current_mol].Gameobject[i].GetComponent<DisplayMolecule> ().DisplayMol (molecules [current_mol].color, molecules [current_mol].type, i);
-			Debug.Log ("Time to render : " + (Time.realtimeSinceStartup - t));
+			Debug.Log ("Time to render "+molecules [current_mol].render +" "+molecules [current_mol].type+ " : " + (Time.realtimeSinceStartup - t));
 			//molecules [i].molecule.GetComponent<DisplayMolecule>().SetColors(ColorDisplay.Name);
 		
 

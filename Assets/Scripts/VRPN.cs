@@ -41,16 +41,24 @@ namespace VRPNData{
 	
 	#if UNITY_STANDALONE_WIN
 	[ StructLayout( LayoutKind.Sequential, Pack=0 )]
-	#else
-	[ StructLayout( LayoutKind.Sequential, Pack=1 )]
-	#endif
 	public struct VRPNButtonReport
 	{
-
+		
 		public IntPtr msg_time;
 		public int button;
 		public int state;
 	}
+	#else
+	[ StructLayout( LayoutKind.Sequential, Pack=1 )]
+	public struct VRPNButtonReport
+	{
+		
+		public TimeVal msg_time;
+		public int button;
+		public int state;
+	}
+	#endif
+
 	/// <summary>
 	/// Time structure
 	/// </summary>
@@ -173,12 +181,14 @@ namespace VRPNData{
 		/// </summary>
 		private string server;
 
-
+		/// <summary>
+		/// color of the device
+		/// </summary>
 		public Color32 c;
 
 
 		/// <summary>
-		/// Device prot
+		/// Device prototype
 		/// </summary>
 		/// <param name="name">Device Name: The device name. Must map the name set when we launch the vrpn server. example: Omni</param>
 		/// <param name="location">Server address : Address of the vrpn server </param>
@@ -581,13 +591,11 @@ namespace VRPNData{
 		/// Are we connected to a server ?
 		/// </summary>
 		private bool serverStarted = false;
-		public float gaussianMean = 1.8f;
-		public float gaussianDeviation = 0.8f;
 		public float magnetFeedbackScale = 1f;
 		// Stiffness, i.e. k value, of the sphere.  Higher stiffness results
 		// in a harder surface.
 		public float sphereStiffness = 0.5f;
-		public float linearForceFeedbackFactor = 6.0f;
+		public float linearForceFeedbackFactor;
 		
 		private Vector3[] lastPosition;
 		private Vector3[] lastBarycentre;
@@ -727,101 +735,96 @@ namespace VRPNData{
 				}
 
 				s.ClosestAtom(Devices);
-				setForceForAtomPosition ();
-				
-				if(imd.IsIMDRunning())
-				{
-					
-					applyForcesVector();
+				applyForcesVector();
 					
 					
-				}
+
 
 
 			}
 
 		}
 
+
+
+
+
+
+
+
+
+
+
+		
+		
 		/// <summary>
 		/// Set force
 		/// </summary>
 		/// <description>Send the desired feedback to server,z axis is inverted</description>
-
-		private float Gaussian(float distance, float mean, float deviation) {
-			return Mathf.Exp(-((Mathf.Pow ((distance - mean) / deviation, 2))) / 2);
-			
-		}
-		
-		
-		
 		
 		// Magnetic force
-		public void setForceForAtomPosition()
+		public void setForceForAtomPosition(int device_id)
 		{
 			if (!ServerStarted) return;
+
+				
+				
+				
+				
+			Vector3 minAtm = s.Selects[device_id].MinDistAtom.Location[Main.current_frame];
+			float radius =  s.Selects[device_id].MinDistAtom.AtomRadius;
+			Vector3 pos = Devices[device_id].obj.transform.position;
+				
+			//Attraction
 			
-			for (int i=0; i<Devices.Count; i++) {
-				
-				
-				
-				
-				Vector3 minAtm = s.Selects[i].MinDistAtom.Location[Main.current_frame];
-				float radius =  s.Selects[i].MinDistAtom.AtomRadius;
-				Vector3 pos = Devices[i].obj.transform.position;
-				
-				//Attraction
-				
-				// Compute the distance between the atom and the picker for each axis
-				Vector3 forceFactor = (minAtm - pos);
-				// Compute the absolute distance between the atom and the picker
-				
-				// Compute a gaussian factor
-				float gaussian = Gaussian (Vector3.Distance (minAtm, pos), gaussianMean, gaussianDeviation);
-				
-				
-				
-				forceFactor /= Vector3.Distance (minAtm, pos);
-				forceFactor *= gaussian * magnetFeedbackScale*radius;
-				
-				Vector3 feedbackForce = Camera.main.transform.worldToLocalMatrix * forceFactor;
-				
-				feedbackForce.x -= Devices[i].TrackerVelocity.x;
-				feedbackForce.y -= Devices[i].TrackerVelocity.y;
-				feedbackForce.z -= Devices[i].TrackerVelocity.z;
-				
-				
-				
-				//Touch
-				
-				/*
+			// Compute the distance between the atom and the picker for each axis
+			Vector3 forceFactor = (minAtm - pos);
+			// Compute the absolute distance between the atom and the picker
+			float dist = Vector3.Distance (minAtm, pos);
+			// Compute a gaussian factor
+			float gaussian = Mathf.Exp(-((Mathf.Pow ((dist - 1.8f) / 0.8f, 2))) / 2);
+			forceFactor /= dist;
+			forceFactor *= gaussian * magnetFeedbackScale*radius;
+			
+			Vector3 feedbackForce = Camera.main.transform.worldToLocalMatrix * forceFactor;
+			
+			feedbackForce.x -= Devices[device_id].TrackerVelocity.x;
+			feedbackForce.y -= Devices[device_id].TrackerVelocity.y;
+			feedbackForce.z -= Devices[device_id].TrackerVelocity.z;
+			
+			
+			
+			//Touch
+			
+			/*
 
-			float dist = Vector3.Magnitude(pos - minAtm);
-			Vector3 feedbackForce = Vector3.zero;
+		float dist = Vector3.Magnitude(pos - minAtm);
+		Vector3 feedbackForce = Vector3.zero;
 
 
 
-			// If the user is within the sphere -- i.e. if the distance from the user to 
-			// the center of the sphere is less than the sphere radius -- then the user 
-			// is penetrating the sphere and a force should be commanded to repel him 
-			// towards the surface.
-			if(dist <radius)
-			{
+		// If the user is within the sphere -- i.e. if the distance from the user to 
+		// the center of the sphere is less than the sphere radius -- then the user 
+		// is penetrating the sphere and a force should be commanded to repel him 
+		// towards the surface.
+		if(dist <radius)
+		{
 
-				float penetrationDistance = radius-dist;
+			float penetrationDistance = radius-dist;
 
-				Vector3 forceDirection = (pos-minAtm)/dist;
-				// Use F=kx to create a force vector that is away from the center of 
-				// the sphere and proportional to the penetration distance, and scsaled 
-				// by the object stiffness.  
-				// Hooke's law explicitly:
+			Vector3 forceDirection = (pos-minAtm)/dist;
+			// Use F=kx to create a force vector that is away from the center of 
+			// the sphere and proportional to the penetration distance, and scsaled 
+			// by the object stiffness.  
+			// Hooke's law explicitly:
 
-				feedbackForce = sphereStiffness*penetrationDistance*forceDirection;
+			feedbackForce = sphereStiffness*penetrationDistance*forceDirection;
 
-			}
+		}
 */
-				//Debug.Log (feedbackForce);
-				VRPNForceFeedbackSetForce (Devices[i].Name, feedbackForce.x, feedbackForce.y, -feedbackForce.z);
-			}
+			//Debug.Log (feedbackForce);
+			VRPNForceFeedbackSetForce (Devices[device_id].Name, feedbackForce.x, feedbackForce.y, -feedbackForce.z);
+
 			
 		}
 
@@ -833,36 +836,39 @@ namespace VRPNData{
 			
 			for (int z=0; z<Devices.Count; z++) {
 				
-				
-				List<Atom> l = new List<Atom> ();
-				
-				switch (GetComponent<Main> ().molecules [1].select) {
-				case SelectDisplay.Atom :
-					l= s.Selects[z].selectedAtoms;
-					
-					break;
-				case SelectDisplay.Residue :
-					for(int i=0;i<s.Selects[z].selectedResidues.Count;i++){
-						l.AddRange(s.Selects[z].selectedResidues[i].Atoms);
-						
-						
-					}
-					
-					break;
-				case SelectDisplay.Chain :
-					for(int i=0;i<s.Selects[z].selectedChains.Count;i++){
-						l.AddRange(s.Selects[z].selectedChains[i].Atoms);
-					}
-					
-					break;
-				default:break;
-					
+
+				if (ServerStarted && !imd.IsIMDRunning ()) {
+					setForceForAtomPosition(z);
 				}
-				
-				
-				
-				if (ServerStarted && imd.IsIMDRunning ()) {
+
+				else if (ServerStarted && imd.IsIMDRunning ()) {
+
+					List<Atom> l = new List<Atom> ();
 					
+					switch (GetComponent<Main> ().molecules [MainUI.current_mol].select) {
+					case SelectDisplay.Atom :
+						l= s.Selects[z].selectedAtoms;
+						
+						break;
+					case SelectDisplay.Residue :
+						for(int i=0;i<s.Selects[z].selectedResidues.Count;i++){
+							l.AddRange(s.Selects[z].selectedResidues[i].Atoms);
+							
+							
+						}
+						
+						break;
+					case SelectDisplay.Chain :
+						for(int i=0;i<s.Selects[z].selectedChains.Count;i++){
+							l.AddRange(s.Selects[z].selectedChains[i].Atoms);
+						}
+						
+						break;
+					default:break;
+						
+					}
+
+
 					if (Devices[z].Button0 && !s.Selects[z].Listen2) {
 						
 						s.Selects[z].Listen2 = true;
@@ -884,136 +890,25 @@ namespace VRPNData{
 							
 							
 							if (l.Count > 0) {
-								
-								
-								
-								Vector3 barycentre = Vector3.zero;
-								for(int i = 0; i < l.Count;i++)
-									barycentre+=l[i].Location[Main.current_frame];
-								
-								barycentre /= l.Count;
-								
-								
-								Vector3 force_atoms = barycentre-lastBarycentre[z];
-								
-								Vector3 force_util = Devices[z].obj.transform.position - lastPosition[z];
-								float dist = Vector3.Distance(Devices[z].obj.transform.position,lastPosition[z]);
-								
-								
-								forces = new float[l.Count * 3];
-								atom_id = new int[l.Count];
-								
-								for(int i = 0; i < l.Count;i++){
-									
-									forces[i*3] = -force_util.x;
-									forces[i*3+1] = force_util.y;
-									forces[i*3+2] = force_util.z;
-									atom_id[i] = l[i].Number;
-									
-								}
-								//Debug.Log (force);
-								//remake the function for force_atoms
-								setLinearForceForVector(-force_atoms,Devices[z]);
-								imd.setForces(atom_id,forces);
-								
-								//Application to the virtual arrows 
-								switch (GetComponent<Main> ().molecules [1].select) {
-								case SelectDisplay.Atom :
-									
-									for(int i = 0; i <s.Selects[z].selectedAtoms.Count;i++){
-										s.Selects[z].selectedAtoms[i].ForceGameobject[z].transform.localPosition = s.Selects[z].selectedAtoms[i].Location[Main.current_frame];
-										s.Selects[z].selectedAtoms[i].ForceGameobject[z].transform.up = force_util;
-										s.Selects[z].selectedAtoms[i].ForceGameobject[z].transform.localScale = new Vector3(dist/50.0f,dist/8.0f,dist/50.0f);
-										
-										
-									}
-									
-									break;
-								case SelectDisplay.Residue :
-									for(int i=0;i<s.Selects[z].selectedResidues.Count;i++){
-										s.Selects[z].selectedResidues[i].ForceGameobject[z].transform.localPosition = s.Selects[z].selectedResidues[i].Location[Main.current_frame];
-										s.Selects[z].selectedResidues[i].ForceGameobject[z].transform.up = force_util;
-										s.Selects[z].selectedResidues[i].ForceGameobject[z].transform.localScale = new Vector3(dist/50.0f,dist/8.0f,dist/50.0f);
-										
-										
-										
-									}
-									
-									break;
-								case SelectDisplay.Chain :
-									for(int i=0;i<s.Selects[z].selectedChains.Count;i++){
-										s.Selects[z].selectedChains[i].ForceGameobject[z].transform.localPosition = s.Selects[z].selectedChains[i].Location[Main.current_frame];
-										s.Selects[z].selectedChains[i].ForceGameobject[z].transform.up = force_util;
-										s.Selects[z].selectedChains[i].ForceGameobject[z].transform.localScale = new Vector3(dist/50.0f,dist/8.0f,dist/50.0f);
-										
-									}
-									
-									break;
-								default:break;
-									
-								}
-								
 
-								
+								setLinearForceForVector(l,z);
+
 							}
 							
 						}
 						
 					}
+					else {
+						setForceForAtomPosition(z);
+					}
+
 					
 					
 					if (!Devices[z].Button0 && s.Selects[z].Listen2) {
 						
 						if (l.Count > 0) {
 							
-							forces = new float[l.Count * 3];
-							int[] atom_id = new int[l.Count];
-							for(int i = 0; i < l.Count;i++){
-								
-								//Vector3 force = vrpn.obj.transform.position - l[i].Gameobject.transform.position;
-								//float dist = Vector3.Distance(vrpn.obj.transform.position,l[i].Gameobject.transform.position);
-								forces[i] = 0.0f;
-								forces[i+1] = 0.0f;
-								forces[i+2] = 0.0f;
-								atom_id[i] = l[i].Number;
-								
-								
-							}
-							
-							switch (GetComponent<Main> ().molecules [1].select) {
-							case SelectDisplay.Atom :
-								
-								for(int i = 0; i <s.Selects[z].selectedAtoms.Count;i++){
-									s.Selects[z].selectedAtoms[i].ForceGameobject[z].transform.localScale =  Vector3.zero;
-									
-									
-								}
-								
-								break;
-							case SelectDisplay.Residue :
-								for(int i=0;i<s.Selects[z].selectedResidues.Count;i++){
-									s.Selects[z].selectedResidues[i].ForceGameobject[z].transform.localScale =  Vector3.zero;
-									
-									
-									
-								}
-								
-								break;
-							case SelectDisplay.Chain :
-								for(int i=0;i<s.Selects[z].selectedChains.Count;i++){
-									s.Selects[z].selectedChains[i].ForceGameobject[z].transform.localScale =  Vector3.zero;
-									
-								}
-								
-								break;
-							default:break;
-								
-							}
-							
-							
-							resetForce(Devices[z]);
-							imd.setForces(atom_id,forces);
-							imd.resetForces();
+							resetForce(l,z);
 							
 						}
 						
@@ -1026,30 +921,166 @@ namespace VRPNData{
 				
 			}
 		}
+
+
+
 		
+		public void setLinearForceForVector(List<Atom> l,int device_id) {
+			
+				Vector3 barycentre = Vector3.zero;
+				for(int i = 0; i < l.Count;i++)
+					barycentre+=l[i].Location[Main.current_frame];
+				
+				barycentre /= l.Count;
+				
+				
+			//Vector3 force_atoms = barycentre-lastBarycentre[device_id];
+				
+				
+			Vector3 force_util = Devices[device_id].obj.transform.position - lastPosition[device_id];
+			float dist = Vector3.Distance(Devices[device_id].obj.transform.position,lastPosition[device_id]);
+				
+				
+				forces = new float[l.Count * 3];
+				atom_id = new int[l.Count];
+				
+				for(int i = 0; i < l.Count;i++){
+					
+					forces[i*3] = -force_util.x;
+					forces[i*3+1] = force_util.y;
+					forces[i*3+2] = force_util.z;
+					atom_id[i] = l[i].Number;
+					
+				}
+				
+				
+				
+				
+				//remake the function for force_atoms
+
+				
+
+
+
+			//float gaussian = Mathf.Exp((Mathf.Pow (distance, 2)) / -2);
+			// Compute a gaussian factor
+			float gaussian = Mathf.Exp(-((Mathf.Pow (Vector3.Distance(Devices[device_id].obj.transform.position,lastPosition[device_id]), 2))) / 100) -1;
+	
+			force_util *= gaussian;
+
+
+			force_util *= linearForceFeedbackFactor*Mathf.Pow(Vector3.Distance(barycentre,lastBarycentre[device_id]),2);
+			Debug.Log (force_util);
+			
+			Vector3 nv = Camera.main.transform.worldToLocalMatrix * force_util;
+
 		
-		public void setLinearForceForVector(Vector3 v,Device d) {
-			if (!ServerStarted) return;
-			
-			
-			
-			
-			Vector3 nv = Camera.main.transform.worldToLocalMatrix * v;
-			/*
-		float distance = Mathf.Sqrt (Mathf.Pow (nv.x, 2) + Mathf.Pow (nv.y, 2) + Mathf.Pow (nv.z, 2));
-		nv.Normalize();
-		
-		nv *= 1 / Mathf.Pow(1 + Mathf.Exp(-(distance - 4)), 2);
-		nv *= linearForceFeedbackFactor;
-		*/
-			
-			VRPNForceFeedbackSetForce (d.Name, nv.x, nv.y, -nv.z);
+		//nv.Normalize();
+
+			VRPNForceFeedbackSetForce (Devices[device_id].Name, nv.x, nv.y, -nv.z);
+			imd.setForces(atom_id,forces);
+
+
+
+			//Application to the virtual arrows 
+			switch (GetComponent<Main> ().molecules [MainUI.current_mol].select) {
+			case SelectDisplay.Atom :
+				
+				for(int i = 0; i <s.Selects[device_id].selectedAtoms.Count;i++){
+					s.Selects[device_id].selectedAtoms[i].ForceGameobject[device_id].transform.localPosition = s.Selects[device_id].selectedAtoms[i].Location[Main.current_frame];
+					s.Selects[device_id].selectedAtoms[i].ForceGameobject[device_id].transform.up = -force_util;
+					s.Selects[device_id].selectedAtoms[i].ForceGameobject[device_id].transform.localScale = new Vector3(dist/50.0f,dist/8.0f,dist/50.0f);
+					
+					
+				}
+				
+				break;
+			case SelectDisplay.Residue :
+				for(int i=0;i<s.Selects[device_id].selectedResidues.Count;i++){
+					s.Selects[device_id].selectedResidues[i].ForceGameobject[device_id].transform.localPosition = s.Selects[device_id].selectedResidues[i].Location[Main.current_frame];
+					s.Selects[device_id].selectedResidues[i].ForceGameobject[device_id].transform.up = -force_util;
+					s.Selects[device_id].selectedResidues[i].ForceGameobject[device_id].transform.localScale = new Vector3(dist/50.0f,dist/8.0f,dist/50.0f);
+					
+					
+					
+				}
+				
+				break;
+			case SelectDisplay.Chain :
+				for(int i=0;i<s.Selects[device_id].selectedChains.Count;i++){
+					s.Selects[device_id].selectedChains[i].ForceGameobject[device_id].transform.localPosition = s.Selects[device_id].selectedChains[i].Location[Main.current_frame];
+					s.Selects[device_id].selectedChains[i].ForceGameobject[device_id].transform.up = -force_util;
+					s.Selects[device_id].selectedChains[i].ForceGameobject[device_id].transform.localScale = new Vector3(dist/50.0f,dist/8.0f,dist/50.0f);
+					
+				}
+				
+				break;
+			default:break;
+				
+			}
+
+
 		}
+
+
+
 		
-		public void resetForce(Device d)
+		public void resetForce(List<Atom> l,int device_id)
 		{
-			if (!ServerStarted) return;
-			VRPNForceFeedbackSetForce (d.Name, 0, 0, 0);
+
+
+
+			forces = new float[l.Count * 3];
+			int[] atom_id = new int[l.Count];
+			for(int i = 0; i < l.Count;i++){
+				
+				//Vector3 force = vrpn.obj.transform.position - l[i].Gameobject.transform.position;
+				//float dist = Vector3.Distance(vrpn.obj.transform.position,l[i].Gameobject.transform.position);
+				forces[i] = 0.0f;
+				forces[i+1] = 0.0f;
+				forces[i+2] = 0.0f;
+				atom_id[i] = l[i].Number;
+				
+				
+			}
+			
+			switch (GetComponent<Main> ().molecules [MainUI.current_mol].select) {
+			case SelectDisplay.Atom :
+				
+				for(int i = 0; i <s.Selects[device_id].selectedAtoms.Count;i++){
+					s.Selects[device_id].selectedAtoms[i].ForceGameobject[device_id].transform.localScale =  Vector3.zero;
+					
+					
+				}
+				
+				break;
+			case SelectDisplay.Residue :
+				for(int i=0;i<s.Selects[device_id].selectedResidues.Count;i++){
+					s.Selects[device_id].selectedResidues[i].ForceGameobject[device_id].transform.localScale =  Vector3.zero;
+					
+					
+					
+				}
+				
+				break;
+			case SelectDisplay.Chain :
+				for(int i=0;i<s.Selects[device_id].selectedChains.Count;i++){
+					s.Selects[device_id].selectedChains[i].ForceGameobject[device_id].transform.localScale =  Vector3.zero;
+					
+				}
+				
+				break;
+			default:break;
+				
+			}
+			
+			
+			VRPNForceFeedbackSetForce (Devices[device_id].Name, 0, 0, 0);
+			imd.setForces(atom_id,forces);
+			imd.resetForces();
+
+
+
 		}
 
 
@@ -1078,6 +1109,8 @@ namespace VRPNData{
 				serverStarted = false;
 				//obj.SetActive(false);
 				for (int j=0; j<devices.Count; j++) {
+
+					Destroy (devices[j].obj);
 
 					Marshal.FreeHGlobal (devices[j].TrackReport);
 

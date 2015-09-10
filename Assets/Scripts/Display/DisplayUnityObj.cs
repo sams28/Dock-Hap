@@ -32,7 +32,8 @@ public class Bond{
 public class DisplayUnityObj : DisplayMolecule {
 
 	private List<Bond> bonds;
-	private List<Transform> chains;
+	private List<Transform> obj_atm;
+	private List<Transform> obj_bond;
 	private GameObject[] m_mesh;
 	private List<Mesh> meshes_atm;
 	private List<Mesh> meshes_bond;
@@ -339,7 +340,7 @@ public class DisplayUnityObj : DisplayMolecule {
 
 	public void DisplayMolTubes(){
 
-		chains = new List<Transform> ();
+		obj_bond = new List<Transform> ();
 		bool skip;
 
 
@@ -364,7 +365,7 @@ public class DisplayUnityObj : DisplayMolecule {
 
 		
 					b1.GetComponentInChildren<Renderer> ().material = setMaterialAtm (mol.Atoms [mol.ChainsBonds [c] [i]], color);
-					chains.Add (b1.transform);
+					obj_bond.Add (b1.transform);
 				}
 			
 			
@@ -382,7 +383,7 @@ public class DisplayUnityObj : DisplayMolecule {
 		int index = 0;
 		for (int c=0; c<mol.ChainsBonds.Count; c++) {
 			for (int i=0; i<mol.ChainsBonds[c].Count-1; i++) {
-				Transform b1 = chains [index];
+				Transform b1 = obj_bond [index];
 				b1.position = mol.Atoms [mol.ChainsBonds [c] [i]].Location[Main.current_frame];
 				b1.LookAt (mol.Atoms [mol.ChainsBonds [c] [i+1]].Location[Main.current_frame]);
 				float d = Vector3.Distance (mol.Atoms [mol.ChainsBonds [c] [i]].Location[Main.current_frame], mol.Atoms [mol.ChainsBonds [c] [i+1]].Location[Main.current_frame]) / 2;
@@ -558,7 +559,7 @@ public class DisplayUnityObj : DisplayMolecule {
 	
 	public void DisplayMolSpheresOld() 
 	{
-		
+		obj_atm = new List<Transform> ();
 		for (int i =0; i < mol.Chains.Count; i++) {
 			
 			mol.Chains[i].Gameobject[frame] = new GameObject(mol.Chains[i].ChainID);
@@ -572,10 +573,12 @@ public class DisplayUnityObj : DisplayMolecule {
 					case TypeDisplay.VDW : displayAtom(mol.Chains[i].Residues[j].Atoms[k],2*scale*mol.Chains[i].Residues[j].Atoms[k].AtomRadius);break;
 					case TypeDisplay.CPK : displayAtom(mol.Chains[i].Residues[j].Atoms[k],0.5f*scale*mol.Chains[i].Residues[j].Atoms[k].AtomRadius);break;
 					default : displayAtom(mol.Chains[i].Residues[j].Atoms[k],scale);break;
+
 					}
 					
 					mol.Chains[i].Residues[j].Atoms[k].Gameobject[frame].transform.SetParent(mol.Chains[i].Residues[j].Gameobject[frame].transform,true);
 					mol.Chains[i].Residues[j].Atoms[k].Gameobject[frame].SetActive(mol.Chains[i].Residues[j].Atoms[k].Active);
+					obj_atm.Add(mol.Chains[i].Residues[j].Atoms[k].Gameobject[frame].transform);
 				}
 			}
 			
@@ -586,15 +589,16 @@ public class DisplayUnityObj : DisplayMolecule {
 	public void UpdateAtomsOld(){
 		
 		for (int i=0; i<mol.Atoms.Count; i++){
-			
-			mol.Atoms [i].Gameobject[Main.current_frame].transform.localPosition  = mol.Atoms[i].Location[Main.current_frame];
+			if(mol.Atoms[i].Active){
+			obj_atm[i].localPosition  = mol.Atoms[i].Location[Main.current_frame];
+			}
 		}
 		
 	}
 
 
 	public void DisplayMolCylindersOld(){
-		chains = new List<Transform> ();
+		obj_bond = new List<Transform> ();
 		for (int i =0; i < mol.Bonds.Count; i++) {
 			
 			
@@ -619,8 +623,8 @@ public class DisplayUnityObj : DisplayMolecule {
 				}
 				b1.GetComponentInChildren<Renderer>().material = setMaterialAtm(mol.Atoms [mol.Bonds [i] [0]],color);
 				b2.GetComponentInChildren<Renderer>().material = setMaterialAtm(mol.Atoms [mol.Bonds [i] [1]],color);
-				chains.Add(b1.transform);
-				chains.Add(b2.transform);
+				obj_bond.Add(b1.transform);
+				obj_bond.Add(b2.transform);
 			}
 			
 		}
@@ -631,27 +635,28 @@ public class DisplayUnityObj : DisplayMolecule {
 public void UpdateBondsOld(){
 	
 	for (int i=0; i<mol.Bonds.Count; i++){
-		
-		Transform b1 =chains[i*2];
-		Transform b2 =chains[i*2+1];
-		
-		b1.position = mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame];
-		b2.position = mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame];
-		
-		b1.LookAt(mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame]);
-		b2.LookAt(mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame]);
-		float d = Vector3.Distance(mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame],mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame])/4;
-		switch(type){
-		case TypeDisplay.CPK : 
-			b1.localScale = new Vector3(scale/16,scale/16,d);
-			b2.localScale = new Vector3(scale/16,scale/16,d);
-			break;
-		default :
-			b1.localScale = new Vector3(scale/4,scale/4,d);
-			b2.localScale = new Vector3(scale/4,scale/4,d);
-			break;
+			if(mol.Atoms [mol.Bonds [i] [0]].Active && mol.Atoms [mol.Bonds [i] [1]].Active){
+			Transform b1 =obj_bond[i*2];
+			Transform b2 =obj_bond[i*2+1];
+			
+			b1.position = mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame];
+			b2.position = mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame];
+			
+			b1.LookAt(mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame]);
+			b2.LookAt(mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame]);
+			float d = Vector3.Distance(mol.Atoms [mol.Bonds [i] [0]].Location[Main.current_frame],mol.Atoms [mol.Bonds [i] [1]].Location[Main.current_frame])/4;
+			switch(type){
+			case TypeDisplay.CPK : 
+				b1.localScale = new Vector3(scale/16,scale/16,d);
+				b2.localScale = new Vector3(scale/16,scale/16,d);
+				break;
+			default :
+				b1.localScale = new Vector3(scale/4,scale/4,d);
+				b2.localScale = new Vector3(scale/4,scale/4,d);
+				break;
+			}
 		}
-		
+
 	}
 	
 }

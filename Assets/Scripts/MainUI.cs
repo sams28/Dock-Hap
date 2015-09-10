@@ -126,8 +126,8 @@ public class MainUI : MonoBehaviour {
 		current_mol = 1;
 
 		menu.SetActive (false);
-		//start.transform.FindChild ("LoadMolecule").GetComponent<InputField> ().text = Application.dataPath+"/Resources/dyna1.gro";
-		start.transform.FindChild ("LoadMolecule").GetComponent<InputField> ().text = "/Users/Samba/Documents/molecules/imdgroup.gro";
+		start.transform.FindChild ("LoadMolecule").GetComponent<InputField> ().text = Application.dataPath;
+		//start.transform.FindChild ("LoadMolecule").GetComponent<InputField> ().text = "/Users/Samba/Documents/molecules/imdgroup.gro";
 		//start.transform.FindChild ("LoadMolecule").GetComponent<InputField> ().text = Application.dataPath+"/Resources/1BRS.pdb";
 	
 	}
@@ -481,6 +481,16 @@ public class MainUI : MonoBehaviour {
 		
 	}
 
+
+	/*
+	public void ShowData(Molecule mol)
+	{
+
+		subMenus.Find (x => x.Name == "Data").Elements.Find (x => x.name == "Atoms_current").GetComponent<Text>().text = "Current Number of Atoms" + mol.Atoms.Count;
+		subMenus.Find (x => x.Name == "Data").Elements.Find (x => x.name == "Atoms_total").GetComponent<Text>().text = "Total Number of Atoms" + mol.Atoms.Count;
+		
+	}
+*/
 	public void ResetGame(){
 
 		Application.LoadLevel (0);

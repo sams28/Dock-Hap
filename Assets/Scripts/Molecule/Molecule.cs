@@ -819,7 +819,6 @@ namespace MoleculeData{
 			string type1, type2;
 			Atom atom_a, atom_b;
 			float cutoff =0.0f;
-			float[] dist =new float[Residues.Count];
 
 			for (int i=0; i<Atoms.Count; i++) {  
 				float rad = Atoms[i].AtomRadius;

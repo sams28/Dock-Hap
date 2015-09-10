@@ -139,6 +139,7 @@ public class IMD : MonoBehaviour {
 				IMD_pause ();
 				pause = true;
 			} else {
+				IMD_stop();
 				IMD_init (server, port);
 				IMD_setNbParticles (molecules[0].Atoms.Count);
 				pause = false;

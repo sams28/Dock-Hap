@@ -75,14 +75,16 @@ public class Select{
 	}
 
 	public void SetClosestElements(Molecule m,GameObject d){
-		
 
-
-		
-		minDistChain = m.Chains [0];
-		minDistResidue = m.Chains [0].Residues [0];
-
-		minDistAtom = m.Chains [0].Residues [0].Atoms [0];
+		int index;
+		for (index =0; index < m.Atoms.Count; index++) {
+			
+			if (m.Atoms [index].Active)
+				break;
+		}
+		minDistChain = m.Atoms [index].AtomChain;
+		minDistResidue = m.Atoms[index].AtomResidue;
+		minDistAtom = m.Atoms [index];
 		float minDist = Vector3.Distance(minDistAtom.Location[Main.current_frame],d.transform.position);
 		float dist;
 		
@@ -102,32 +104,20 @@ public class Select{
 */
 
 
-		for (int i =0; i < m.Chains.Count; i++) {
+		for (int i =index+1; i < m.Atoms.Count; i++) {
 
-			if(m.Chains[i].Active){
-		
-			for (int j =0; j < m.Chains[i].Residues.Count; j++) {
+			if(m.Atoms[i].Active){
+				dist =  Vector3.Distance(m.Atoms[i].Location[Main.current_frame],d.transform.position);
 
-					if(m.Chains[i].Residues[j].Active){
+				if(dist < minDist){
+					minDist = dist;
+					minDistAtom = m.Atoms[i];
+					minDistResidue = m.Atoms[i].AtomResidue;
+					minDistChain =m.Atoms[i].AtomChain;
 
-				for (int k =0; k < m.Chains[i].Residues[j].Atoms.Count; k++) {
-
-					if(m.Chains[i].Residues[j].Atoms[k].Active){
-					dist =  Vector3.Distance(m.Chains[i].Residues[j].Atoms[k].Location[Main.current_frame],d.transform.position);
-
-					if(dist < minDist){
-						minDist = dist;
-						minDistAtom = m.Chains[i].Residues[j].Atoms[k];
-						minDistResidue = m.Chains[i].Residues[j];
-						minDistChain = m.Chains[i];
-						
-						
-								}
-
-							}
-						}
-					}	
 				}
+
+				
 			}
 		}
 
