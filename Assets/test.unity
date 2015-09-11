@@ -3297,7 +3297,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Default PHANToM@localhost
+  m_Text: Default PHANToM;localhost
 --- !u!222 &439362913
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -3904,7 +3904,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   magnetFeedbackScale: 1
   sphereStiffness: .5
-  linearForceFeedbackFactor: 1000
+  linearForceFeedbackFactor: 100
 --- !u!114 &494678859
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6826,7 +6826,7 @@ MonoBehaviour:
     m_TypeName: UnityEngine.UI.InputField+OnChangeEvent, UnityEngine.UI, Version=1.0.0.0,
       Culture=neutral, PublicKeyToken=null
   m_SelectionColor: {r: .65882355, g: .807843149, b: 1, a: .752941191}
-  m_Text: Default PHANToM@localhost
+  m_Text: Default PHANToM;localhost
   m_CaretBlinkRate: 1.70000005
 --- !u!114 &952349443
 MonoBehaviour:

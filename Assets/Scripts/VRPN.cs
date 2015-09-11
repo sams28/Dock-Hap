@@ -630,7 +630,7 @@ namespace VRPNData{
 
 			for (int i=0; i<sl.Length; i++) {
 				string[] sl2;
-				sl2 = sl[i].Split (new Char[] {'@'}, StringSplitOptions.RemoveEmptyEntries);
+				sl2 = sl[i].Split (";".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
 				devices.Add (new Device(sl2[0],sl2[1]));
 			}
 
@@ -655,7 +655,7 @@ namespace VRPNData{
 
 
 			//List<string> s_temp =new List<string>();
-
+			VRPNServerStart ("",devices[0].Server);
 			for (int i=0; i<devices.Count; i++) {
 				/*String s = s_temp.Find(x => x == devices[i].Server);
 				if(s == null){
@@ -666,7 +666,7 @@ namespace VRPNData{
 				}
 				*/
 
-				VRPNServerStart ("",devices[0].Server);
+
 				
 
 				devices[i].obj = (GameObject)Instantiate (Resources.Load("Prefabs/Picker") as GameObject, new Vector3(0,0,10), Quaternion.identity);
@@ -757,79 +757,12 @@ namespace VRPNData{
 
 		
 		
+
+
+
 		/// <summary>
-		/// Set force
+		/// Manages all the forces to send 
 		/// </summary>
-		/// <description>Send the desired feedback to server,z axis is inverted</description>
-		
-		// Magnetic force
-		public void setForceForAtomPosition(int device_id)
-		{
-			if (!ServerStarted) return;
-
-				
-				
-				
-				
-			Vector3 minAtm = s.Selects[device_id].MinDistAtom.Location[Main.current_frame];
-			float radius =  s.Selects[device_id].MinDistAtom.AtomRadius;
-			Vector3 pos = Devices[device_id].obj.transform.position;
-				
-			//Attraction
-			
-			// Compute the distance between the atom and the picker for each axis
-			Vector3 forceFactor = (minAtm - pos);
-			// Compute the absolute distance between the atom and the picker
-			float dist = Vector3.Distance (minAtm, pos);
-			// Compute a gaussian factor
-			float gaussian = Mathf.Exp(-((Mathf.Pow ((dist - 1.8f) / 0.8f, 2))) / 2);
-			forceFactor /= dist;
-			forceFactor *= gaussian * magnetFeedbackScale*radius;
-			
-			Vector3 feedbackForce = Camera.main.transform.worldToLocalMatrix * forceFactor;
-			
-			feedbackForce.x -= Devices[device_id].TrackerVelocity.x;
-			feedbackForce.y -= Devices[device_id].TrackerVelocity.y;
-			feedbackForce.z -= Devices[device_id].TrackerVelocity.z;
-			
-			
-			
-			//Touch
-			
-			/*
-
-		float dist = Vector3.Magnitude(pos - minAtm);
-		Vector3 feedbackForce = Vector3.zero;
-
-
-
-		// If the user is within the sphere -- i.e. if the distance from the user to 
-		// the center of the sphere is less than the sphere radius -- then the user 
-		// is penetrating the sphere and a force should be commanded to repel him 
-		// towards the surface.
-		if(dist <radius)
-		{
-
-			float penetrationDistance = radius-dist;
-
-			Vector3 forceDirection = (pos-minAtm)/dist;
-			// Use F=kx to create a force vector that is away from the center of 
-			// the sphere and proportional to the penetration distance, and scsaled 
-			// by the object stiffness.  
-			// Hooke's law explicitly:
-
-			feedbackForce = sphereStiffness*penetrationDistance*forceDirection;
-
-		}
-*/
-			//Debug.Log (feedbackForce);
-			VRPNForceFeedbackSetForce (Devices[device_id].Name, feedbackForce.x, feedbackForce.y, -feedbackForce.z);
-
-			
-		}
-
-
-
 		public void applyForcesVector(){
 			
 			
@@ -923,10 +856,89 @@ namespace VRPNData{
 		}
 
 
-
-		
-		public void setLinearForceForVector(List<Atom> l,int device_id) {
+		/// <summary>
+		/// Set force magnetic forces for the device
+		/// </summary>
+		public void setForceForAtomPosition(int device_id)
+		{
+			if (!ServerStarted) return;
 			
+			
+			
+			
+			
+			Vector3 minAtm = s.Selects[device_id].MinDistAtom.Location[Main.current_frame];
+			float radius =  s.Selects[device_id].MinDistAtom.AtomRadius;
+			Vector3 pos = Devices[device_id].obj.transform.position;
+			
+			//Attraction
+			
+			// Compute the distance between the atom and the picker for each axis
+			Vector3 forceFactor = (minAtm - pos);
+			// Compute the absolute distance between the atom and the picker
+			float dist = Vector3.Distance (minAtm, pos);
+			// Compute a gaussian factor
+			float gaussian = Mathf.Exp(-((Mathf.Pow ((dist - 1.8f) / 0.8f, 2))) / 2);
+			forceFactor /= dist;
+			forceFactor *= gaussian * magnetFeedbackScale*radius;
+			
+			Vector3 feedbackForce = Camera.main.transform.worldToLocalMatrix * forceFactor;
+			
+			feedbackForce.x -= Devices[device_id].TrackerVelocity.x;
+			feedbackForce.y -= Devices[device_id].TrackerVelocity.y;
+			feedbackForce.z -= Devices[device_id].TrackerVelocity.z;
+			
+			
+			
+			//Touch
+			
+			/*
+
+		float dist = Vector3.Magnitude(pos - minAtm);
+		Vector3 feedbackForce = Vector3.zero;
+
+
+
+		// If the user is within the sphere -- i.e. if the distance from the user to 
+		// the center of the sphere is less than the sphere radius -- then the user 
+		// is penetrating the sphere and a force should be commanded to repel him 
+		// towards the surface.
+		if(dist <radius)
+		{
+
+			float penetrationDistance = radius-dist;
+
+			Vector3 forceDirection = (pos-minAtm)/dist;
+			// Use F=kx to create a force vector that is away from the center of 
+			// the sphere and proportional to the penetration distance, and scsaled 
+			// by the object stiffness.  
+			// Hooke's law explicitly:
+
+			feedbackForce = sphereStiffness*penetrationDistance*forceDirection;
+
+		}
+*/
+			//Debug.Log (feedbackForce);
+			VRPNForceFeedbackSetForce (Devices[device_id].Name, feedbackForce.x, feedbackForce.y, -feedbackForce.z);
+			
+			
+		}
+
+
+
+
+
+
+
+
+
+		/// <summary>
+		/// Set the forces forces to send to the atoms and the device 
+		/// </summary>
+		public void setLinearForceForVector(List<Atom> l,int device_id) {
+
+
+
 				Vector3 barycentre = Vector3.zero;
 				for(int i = 0; i < l.Count;i++)
 					barycentre+=l[i].Location[Main.current_frame];
@@ -936,11 +948,19 @@ namespace VRPNData{
 				
 			//Vector3 force_atoms = barycentre-lastBarycentre[device_id];
 				
-				
+			float xbase = 0.5f;
 			Vector3 force_util = Devices[device_id].obj.transform.position - lastPosition[device_id];
 			float dist = Vector3.Distance(Devices[device_id].obj.transform.position,lastPosition[device_id]);
 				
-				
+			if (force_util.magnitude < xbase)
+				force_util = new Vector3(0,0,0);
+			else
+			{
+				force_util -= force_util/force_util.magnitude*xbase;
+			}
+
+
+
 				forces = new float[l.Count * 3];
 				atom_id = new int[l.Count];
 				
@@ -956,10 +976,7 @@ namespace VRPNData{
 				
 				
 				
-				//remake the function for force_atoms
-
 				
-
 
 
 			//float gaussian = Mathf.Exp((Mathf.Pow (distance, 2)) / -2);
@@ -979,7 +996,6 @@ namespace VRPNData{
 
 			VRPNForceFeedbackSetForce (Devices[device_id].Name, nv.x, nv.y, -nv.z);
 			imd.setForces(atom_id,forces);
-
 
 
 			//Application to the virtual arrows 
@@ -1024,7 +1040,9 @@ namespace VRPNData{
 
 
 
-		
+		/// <summary>
+		/// Set all the forces to zero
+		/// </summary>
 		public void resetForce(List<Atom> l,int device_id)
 		{
 
@@ -1085,7 +1103,7 @@ namespace VRPNData{
 
 
 		/// <summary>
-		/// Stop the devices
+		/// Stop the devices (public)
 		/// </summary>
 		public void Stop () {
 
@@ -1105,7 +1123,6 @@ namespace VRPNData{
 
 			if (serverStarted) {
 				VRPNServerStop ();
-
 				serverStarted = false;
 				//obj.SetActive(false);
 				for (int j=0; j<devices.Count; j++) {
